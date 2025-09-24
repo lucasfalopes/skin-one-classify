@@ -59,12 +59,12 @@ const Index = () => {
                   <Activity className="w-4 h-4 mr-1" />
                   Sistema Hospitalar Profissional
                 </Badge>
-                <h1 className="text-4xl md:text-6xl font-bold text-white leading-tight">
+                <h1 className="text-4xl md:text-6xl font-bold text-white drop-shadow-lg leading-tight">
                   Skin One
-                  <span className="block text-accent">Plataforma</span>
+                  <span className="block text-accent drop-shadow-lg">Plataforma</span>
                   de Classificação
                 </h1>
-                <p className="text-xl text-white/90 leading-relaxed">
+                <p className="text-xl text-white drop-shadow-md leading-relaxed">
                   Sistema especializado para estomatoterapeutas classificarem lesões de pele 
                   seguindo protocolos NPUAP. Faça upload de imagens e obtenha classificações 
                   precisas para seus pacientes.
@@ -78,15 +78,6 @@ const Index = () => {
                     <ChevronRight className="w-4 h-4 ml-2" />
                   </Button>
                 </Link>
-                <Button 
-                  variant="outline" 
-                  size="lg" 
-                  className="w-full sm:w-auto border-white/20 text-white hover:bg-white/10"
-                  onClick={() => document.getElementById('video-demo')?.scrollIntoView({ behavior: 'smooth' })}
-                >
-                  <Eye className="w-5 h-5 mr-2" />
-                  Ver Demonstração
-                </Button>
               </div>
             </div>
             <div className="relative">
@@ -355,10 +346,10 @@ const Index = () => {
         <div className="container mx-auto px-4">
           <div className="text-center space-y-8">
             <div className="space-y-4">
-              <h2 className="text-3xl md:text-4xl font-bold text-white">
+              <h2 className="text-3xl md:text-4xl font-bold text-white drop-shadow-lg">
                 Acesse o Sistema Agora
               </h2>
-              <p className="text-xl text-white/90 max-w-2xl mx-auto">
+              <p className="text-xl text-white drop-shadow-md max-w-2xl mx-auto">
                 Faça login para começar a usar o Skin One. Upload de imagens e 
                 classificação disponíveis apenas para profissionais autenticados.
               </p>
@@ -370,15 +361,6 @@ const Index = () => {
                   Fazer Login
                 </Button>
               </Link>
-              <Button 
-                variant="outline" 
-                size="lg" 
-                className="border-white/20 text-white hover:bg-white/10"
-                onClick={() => document.getElementById('video-demo')?.scrollIntoView({ behavior: 'smooth' })}
-              >
-                <Eye className="w-5 h-5 mr-2" />
-                Ver Demonstração Novamente
-              </Button>
             </div>
           </div>
         </div>
