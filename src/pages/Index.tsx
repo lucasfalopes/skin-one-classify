@@ -135,19 +135,19 @@ const Index = () => {
             </div>
             
             <div className="space-y-8">
-              <Card className="shadow-card bg-gradient-card border-0">
+              <Card className="shadow-medical bg-card/95 backdrop-blur-sm border border-border/50 hover:shadow-lg transition-all duration-300">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-3 text-xl">
-                    <Heart className="w-6 h-6 text-destructive" />
+                  <CardTitle className="flex items-center gap-3 text-xl text-foreground">
+                    <Heart className="w-6 h-6 text-destructive hover-scale transition-transform duration-300" />
                     O Problema
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="text-muted-foreground leading-relaxed">
+                <CardContent className="text-foreground leading-relaxed">
                   <p className="mb-4">
-                    No Brasil, mais de <strong>3 milhões de pessoas</strong> desenvolvem lesões por pressão anualmente, 
+                    No Brasil, mais de <strong className="text-destructive">3 milhões de pessoas</strong> desenvolvem lesões por pressão anualmente, 
                     principalmente em ambiente hospitalar. A classificação inadequada dessas lesões resulta em:
                   </p>
-                  <ul className="list-disc pl-6 space-y-2">
+                  <ul className="list-disc pl-6 space-y-2 text-foreground/90">
                     <li>Tratamentos inadequados e prolongados</li>
                     <li>Custos hospitalares elevados (até R$ 50.000 por paciente)</li>
                     <li>Sofrimento desnecessário dos pacientes</li>
@@ -156,18 +156,18 @@ const Index = () => {
                 </CardContent>
               </Card>
 
-              <Card className="shadow-card bg-gradient-card border-0">
+              <Card className="shadow-medical bg-card/95 backdrop-blur-sm border border-border/50 hover:shadow-lg transition-all duration-300">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-3 text-xl">
-                    <Target className="w-6 h-6 text-success" />
+                  <CardTitle className="flex items-center gap-3 text-xl text-foreground">
+                    <Target className="w-6 h-6 text-success hover-scale transition-transform duration-300" />
                     Nossa Solução
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="text-muted-foreground leading-relaxed">
+                <CardContent className="text-foreground leading-relaxed">
                   <p className="mb-4">
                     O Skin One oferece uma plataforma centralizada onde estomatoterapeutas podem:
                   </p>
-                  <ul className="list-disc pl-6 space-y-2">
+                  <ul className="list-disc pl-6 space-y-2 text-foreground/90">
                     <li>Receber imagens padronizadas de lesões de pele</li>
                     <li>Classificar seguindo protocolos NPUAP/EPUAP internacionais</li>
                     <li>Gerar relatórios detalhados para as equipes médicas</li>
@@ -177,18 +177,18 @@ const Index = () => {
                 </CardContent>
               </Card>
 
-              <Card className="shadow-card bg-gradient-card border-0">
+              <Card className="shadow-medical bg-card/95 backdrop-blur-sm border border-border/50 hover:shadow-lg transition-all duration-300">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-3 text-xl">
-                    <BarChart3 className="w-6 h-6 text-primary" />
+                  <CardTitle className="flex items-center gap-3 text-xl text-foreground">
+                    <BarChart3 className="w-6 h-6 text-primary hover-scale transition-transform duration-300" />
                     Impacto Esperado
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="text-muted-foreground leading-relaxed">
+                <CardContent className="text-foreground leading-relaxed">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <h4 className="font-semibold text-foreground mb-2">Para Hospitais:</h4>
-                      <ul className="list-disc pl-6 space-y-1 text-sm">
+                      <ul className="list-disc pl-6 space-y-1 text-sm text-foreground/90">
                         <li>Redução de 40% no tempo de classificação</li>
                         <li>Padronização de protocolos</li>
                         <li>Diminuição de custos com tratamentos</li>
@@ -197,7 +197,7 @@ const Index = () => {
                     </div>
                     <div>
                       <h4 className="font-semibold text-foreground mb-2">Para Pacientes:</h4>
-                      <ul className="list-disc pl-6 space-y-1 text-sm">
+                      <ul className="list-disc pl-6 space-y-1 text-sm text-foreground/90">
                         <li>Tratamentos mais precisos e rápidos</li>
                         <li>Menor tempo de internação</li>
                         <li>Redução de complicações</li>
