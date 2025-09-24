@@ -16,6 +16,7 @@ import {
   BarChart3
 } from "lucide-react";
 import heroImage from "@/assets/hero-medical.jpg";
+import UserMenu from "@/components/UserMenu";
 
 const Index = () => {
   return (
@@ -33,12 +34,10 @@ const Index = () => {
               </span>
             </div>
             <nav className="hidden md:flex items-center space-x-6">
-              <Link to="/upload" className="text-muted-foreground hover:text-foreground transition-colors">
-                Upload
-              </Link>
               <Link to="/register" className="text-muted-foreground hover:text-foreground transition-colors">
                 Área Profissional
               </Link>
+              <UserMenu />
               <Link to="/register">
                 <Button variant="medical" size="sm">
                   <Stethoscope className="w-4 h-4 mr-2" />
@@ -58,32 +57,36 @@ const Index = () => {
               <div className="space-y-4">
                 <Badge variant="outline" className="border-white/20 text-white bg-white/10">
                   <Activity className="w-4 h-4 mr-1" />
-                  Tecnologia Médica Avançada
+                  Sistema Hospitalar Profissional
                 </Badge>
                 <h1 className="text-4xl md:text-6xl font-bold text-white leading-tight">
-                  Classificação
-                  <span className="block text-accent">Inteligente</span>
-                  de Lesões de Pele
+                  Skin One
+                  <span className="block text-accent">Plataforma</span>
+                  de Classificação
                 </h1>
                 <p className="text-xl text-white/90 leading-relaxed">
-                  Plataforma hospitalar para acompanhamento e classificação profissional 
-                  de doenças de pele com precisão e eficiência.
+                  Sistema especializado para estomatoterapeutas classificarem lesões de pele 
+                  seguindo protocolos NPUAP. Faça upload de imagens e obtenha classificações 
+                  precisas para seus pacientes.
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link to="/upload">
+                <Link to="/register">
                   <Button variant="secondary" size="lg" className="w-full sm:w-auto">
-                    <Upload className="w-5 h-5 mr-2" />
-                    Enviar Imagens
+                    <Stethoscope className="w-5 h-5 mr-2" />
+                    Entrar no Sistema
                     <ChevronRight className="w-4 h-4 ml-2" />
                   </Button>
                 </Link>
-                <Link to="/register">
-                  <Button variant="outline" size="lg" className="w-full sm:w-auto border-white/20 text-white hover:bg-white/10">
-                    <Users className="w-5 h-5 mr-2" />
-                    Acesso Profissional
-                  </Button>
-                </Link>
+                <Button 
+                  variant="outline" 
+                  size="lg" 
+                  className="w-full sm:w-auto border-white/20 text-white hover:bg-white/10"
+                  onClick={() => document.getElementById('video-demo')?.scrollIntoView({ behavior: 'smooth' })}
+                >
+                  <Eye className="w-5 h-5 mr-2" />
+                  Ver Demonstração
+                </Button>
               </div>
             </div>
             <div className="relative">
@@ -94,6 +97,125 @@ const Index = () => {
                   className="w-full h-full object-cover"
                 />
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Video Demo Section */}
+      <section id="video-demo" className="py-20 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto text-center space-y-8">
+            <div className="space-y-4">
+              <h2 className="text-3xl md:text-4xl font-bold text-foreground">
+                Como Usar o Sistema
+              </h2>
+              <p className="text-xl text-muted-foreground">
+                Veja na prática como funciona o processo de upload e classificação de lesões
+              </p>
+            </div>
+            <div className="aspect-video rounded-xl overflow-hidden shadow-medical bg-muted">
+              <iframe
+                width="100%"
+                height="100%"
+                src="https://www.youtube.com/embed/dQw4w9WgXcQ"
+                title="Demonstração Skin One - Upload e Classificação"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="w-full h-full"
+              ></iframe>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Project Motivation */}
+      <section className="py-20">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-16 space-y-4">
+              <h2 className="text-3xl md:text-4xl font-bold text-foreground">
+                Motivação do Projeto
+              </h2>
+              <p className="text-xl text-muted-foreground">
+                Por que desenvolvemos o Skin One
+              </p>
+            </div>
+            
+            <div className="space-y-8">
+              <Card className="shadow-card bg-gradient-card border-0">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-3 text-xl">
+                    <Heart className="w-6 h-6 text-destructive" />
+                    O Problema
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="text-muted-foreground leading-relaxed">
+                  <p className="mb-4">
+                    No Brasil, mais de <strong>3 milhões de pessoas</strong> desenvolvem lesões por pressão anualmente, 
+                    principalmente em ambiente hospitalar. A classificação inadequada dessas lesões resulta em:
+                  </p>
+                  <ul className="list-disc pl-6 space-y-2">
+                    <li>Tratamentos inadequados e prolongados</li>
+                    <li>Custos hospitalares elevados (até R$ 50.000 por paciente)</li>
+                    <li>Sofrimento desnecessário dos pacientes</li>
+                    <li>Falta de padronização entre equipes médicas</li>
+                  </ul>
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-card bg-gradient-card border-0">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-3 text-xl">
+                    <Target className="w-6 h-6 text-success" />
+                    Nossa Solução
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="text-muted-foreground leading-relaxed">
+                  <p className="mb-4">
+                    O Skin One oferece uma plataforma centralizada onde estomatoterapeutas podem:
+                  </p>
+                  <ul className="list-disc pl-6 space-y-2">
+                    <li>Receber imagens padronizadas de lesões de pele</li>
+                    <li>Classificar seguindo protocolos NPUAP/EPUAP internacionais</li>
+                    <li>Gerar relatórios detalhados para as equipes médicas</li>
+                    <li>Acompanhar a evolução do tratamento</li>
+                    <li>Manter histórico digital organizado</li>
+                  </ul>
+                </CardContent>
+              </Card>
+
+              <Card className="shadow-card bg-gradient-card border-0">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-3 text-xl">
+                    <BarChart3 className="w-6 h-6 text-primary" />
+                    Impacto Esperado
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="text-muted-foreground leading-relaxed">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <h4 className="font-semibold text-foreground mb-2">Para Hospitais:</h4>
+                      <ul className="list-disc pl-6 space-y-1 text-sm">
+                        <li>Redução de 40% no tempo de classificação</li>
+                        <li>Padronização de protocolos</li>
+                        <li>Diminuição de custos com tratamentos</li>
+                        <li>Melhoria na qualidade do atendimento</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-foreground mb-2">Para Pacientes:</h4>
+                      <ul className="list-disc pl-6 space-y-1 text-sm">
+                        <li>Tratamentos mais precisos e rápidos</li>
+                        <li>Menor tempo de internação</li>
+                        <li>Redução de complicações</li>
+                        <li>Melhor qualidade de vida</li>
+                      </ul>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
@@ -234,26 +356,29 @@ const Index = () => {
           <div className="text-center space-y-8">
             <div className="space-y-4">
               <h2 className="text-3xl md:text-4xl font-bold text-white">
-                Pronto para Começar?
+                Acesse o Sistema Agora
               </h2>
               <p className="text-xl text-white/90 max-w-2xl mx-auto">
-                Faça parte da revolução no cuidado de lesões de pele. 
-                Tecnologia e expertise médica trabalhando juntas.
+                Faça login para começar a usar o Skin One. Upload de imagens e 
+                classificação disponíveis apenas para profissionais autenticados.
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/upload">
-                <Button variant="secondary" size="lg">
-                  <Upload className="w-5 h-5 mr-2" />
-                  Enviar Primeira Imagem
-                </Button>
-              </Link>
               <Link to="/register">
-                <Button variant="outline" size="lg" className="border-white/20 text-white hover:bg-white/10">
-                  <Heart className="w-5 h-5 mr-2" />
-                  Sou Profissional de Saúde
+                <Button variant="secondary" size="lg">
+                  <Stethoscope className="w-5 h-5 mr-2" />
+                  Fazer Login
                 </Button>
               </Link>
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className="border-white/20 text-white hover:bg-white/10"
+                onClick={() => document.getElementById('video-demo')?.scrollIntoView({ behavior: 'smooth' })}
+              >
+                <Eye className="w-5 h-5 mr-2" />
+                Ver Demonstração Novamente
+              </Button>
             </div>
           </div>
         </div>

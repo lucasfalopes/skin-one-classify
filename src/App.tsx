@@ -8,6 +8,7 @@ import Upload from "./pages/Upload";
 import Register from "./pages/Register";
 import Classification from "./pages/Classification";
 import NotFound from "./pages/NotFound";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -19,9 +20,23 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/upload" element={<Upload />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/classification" element={<Classification />} />
+          <Route 
+            path="/upload" 
+            element={
+              <ProtectedRoute>
+                <Upload />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/classification" 
+            element={
+              <ProtectedRoute>
+                <Classification />
+              </ProtectedRoute>
+            } 
+          />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
