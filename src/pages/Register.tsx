@@ -10,6 +10,7 @@ import { Home, UserPlus, LogIn, Stethoscope } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { api, endpoints, LoginResponse } from "@/lib/api";
 import { setAuthToken } from "@/lib/auth";
+import { GoogleLogin, googleLogout } from "@react-oauth/google";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -77,6 +78,31 @@ const Register = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleGoogleSuccess = async (credential: string) => {
+    try {
+      const response = await api.post<LoginResponse>(endpoints.loginWithGoogle(), { id_token: credential });
+      setAuthToken(response.token);
+      try { localStorage.setItem("skinone-user", JSON.stringify(response.user)); } catch {}
+      toast({ title: "Login com Google realizado!", description: "Redirecionando..." });
+      navigate("/classification");
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Falha no Google Login", description: error?.message ?? "Tente novamente." });
+    }
+  };
+
+  const onGoogleLoginSuccess = (credentialResponse: any) => {
+    const cred = credentialResponse?.credential;
+    if (cred) {
+      void handleGoogleSuccess(cred);
+    } else {
+      toast({ variant: "destructive", title: "Google", description: "Credencial ausente." });
+    }
+  };
+
+  const onGoogleLoginError = () => {
+    toast({ variant: "destructive", title: "Google", description: "Falha na autenticação." });
   };
 
   return (
@@ -168,6 +194,21 @@ const Register = () => {
                     </Button>
                   </form>
                 </CardContent>
+                <div className="px-6 pb-6">
+                  <div className="relative my-4">
+                    <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-card px-2 text-muted-foreground">ou</span>
+                    </div>
+                  </div>
+                  {import.meta.env.VITE_GOOGLE_CLIENT_ID ? (
+                    <GoogleLogin onSuccess={onGoogleLoginSuccess} onError={onGoogleLoginError} ux_mode="popup" useOneTap={false} />
+                  ) : (
+                    <p className="text-sm text-muted-foreground text-center">
+                      Configure VITE_GOOGLE_CLIENT_ID para habilitar login com Google
+                    </p>
+                  )}
+                </div>
               </Card>
             </TabsContent>
 
@@ -261,6 +302,21 @@ const Register = () => {
                     </Button>
                   </form>
                 </CardContent>
+                <div className="px-6 pb-6">
+                  <div className="relative my-4">
+                    <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-card px-2 text-muted-foreground">ou</span>
+                    </div>
+                  </div>
+                  {import.meta.env.VITE_GOOGLE_CLIENT_ID ? (
+                    <GoogleLogin onSuccess={onGoogleLoginSuccess} onError={onGoogleLoginError} ux_mode="popup" useOneTap={false} text="signup_with" />
+                  ) : (
+                    <p className="text-sm text-muted-foreground text-center">
+                      Configure VITE_GOOGLE_CLIENT_ID para habilitar cadastro com Google
+                    </p>
+                  )}
+                </div>
               </Card>
             </TabsContent>
           </Tabs>
