@@ -11,6 +11,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { User, LogOut, Upload, BarChart3 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { clearAuthToken, getAuthToken } from "@/lib/auth";
 
 const UserMenu = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -19,18 +20,17 @@ const UserMenu = () => {
 
   useEffect(() => {
     const checkAuthStatus = () => {
-      const user = localStorage.getItem("skinone-user");
-      setIsLoggedIn(!!user);
+      const token = getAuthToken();
+      setIsLoggedIn(!!token);
     };
 
     checkAuthStatus();
-    // Listen for storage changes (login/logout events)
     window.addEventListener('storage', checkAuthStatus);
-    
     return () => window.removeEventListener('storage', checkAuthStatus);
   }, []);
 
   const handleLogout = () => {
+    clearAuthToken();
     localStorage.removeItem("skinone-user");
     setIsLoggedIn(false);
     toast({

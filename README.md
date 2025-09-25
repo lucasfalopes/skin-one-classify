@@ -60,6 +60,16 @@ This project is built with:
 - shadcn-ui
 - Tailwind CSS
 
+## API setup
+
+Create a `.env` file at the repo root with:
+
+```
+VITE_API_BASE_URL=http://localhost:8000
+```
+
+Run your Django API on port 8000 and enable CORS for `http://localhost:8080`. See `DJANGO_API_ROUTES.md` for the expected endpoints and payloads.
+
 ## How can I deploy this project?
 
 Simply open [Lovable](https://lovable.dev/projects/571b256d-14fe-4122-9a8d-9373f755a066) and click on Share -> Publish.

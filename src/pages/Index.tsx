@@ -17,6 +17,9 @@ import {
 } from "lucide-react";
 import heroImage from "@/assets/hero-medical.jpg";
 import UserMenu from "@/components/UserMenu";
+import { assertEnv } from "@/lib/env";
+
+assertEnv();
 
 const Index = () => {
   return (

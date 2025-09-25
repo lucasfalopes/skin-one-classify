@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, Lock, Stethoscope } from "lucide-react";
+import { getAuthToken } from "@/lib/auth";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -14,11 +15,13 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   useEffect(() => {
     const checkAuth = () => {
-      const user = localStorage.getItem("skinone-user");
-      setIsAuthenticated(!!user);
+      const token = getAuthToken();
+      setIsAuthenticated(!!token);
     };
 
     checkAuth();
+    window.addEventListener("storage", checkAuth);
+    return () => window.removeEventListener("storage", checkAuth);
   }, []);
 
   if (isAuthenticated === null) {

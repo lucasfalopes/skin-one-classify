@@ -8,40 +8,67 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Home, UserPlus, LogIn, Stethoscope } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { api, endpoints, LoginResponse } from "@/lib/api";
+import { setAuthToken } from "@/lib/auth";
 
 const Register = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleRegister = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleRegister = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
-    
-    // Simular registro
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      const formData = new FormData(event.currentTarget);
+      const payload = {
+        name: String(formData.get("name")),
+        email: String(formData.get("email")),
+        password: String(formData.get("password")),
+        coren: String(formData.get("coren")),
+        specialty: String(formData.get("specialty")),
+        institution: String(formData.get("institution")),
+      };
+      await api.post(endpoints.register(), payload);
       toast({
         title: "Cadastro realizado com sucesso!",
         description: "Você pode agora fazer login no sistema.",
       });
-    }, 2000);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Falha no cadastro",
+        description: error?.message ?? "Verifique os dados e tente novamente.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleLogin = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
-    
-    // Simular login
-    setTimeout(() => {
-      setIsLoading(false);
-      localStorage.setItem("skinone-user", "logged-in");
+    try {
+      const formData = new FormData(event.currentTarget);
+      const email = String(formData.get("login-email"));
+      const password = String(formData.get("login-password"));
+      const response = await api.post<LoginResponse>(endpoints.login(), { email, password });
+      setAuthToken(response.token);
+      try { localStorage.setItem("skinone-user", JSON.stringify(response.user)); } catch {}
       toast({
         title: "Login realizado com sucesso!",
         description: "Redirecionando para a área de classificação...",
       });
       navigate("/classification");
-    }, 1500);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Falha no login",
+        description: error?.message ?? "Credenciais inválidas.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -114,6 +141,7 @@ const Register = () => {
                         id="login-email"
                         type="email"
                         placeholder="seu@email.com"
+                        name="login-email"
                         required
                       />
                     </div>
@@ -123,6 +151,7 @@ const Register = () => {
                         id="login-password"
                         type="password"
                         placeholder="Sua senha"
+                        name="login-password"
                         required
                       />
                     </div>
@@ -151,6 +180,7 @@ const Register = () => {
                         id="name"
                         type="text"
                         placeholder="Seu nome completo"
+                        name="name"
                         required
                       />
                     </div>
@@ -160,6 +190,7 @@ const Register = () => {
                         id="email"
                         type="email"
                         placeholder="seu@email.com"
+                        name="email"
                         required
                       />
                     </div>
@@ -169,12 +200,13 @@ const Register = () => {
                         id="coren"
                         type="text"
                         placeholder="Número do COREN"
+                        name="coren"
                         required
                       />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="specialty">Especialização</Label>
-                      <Select required>
+                      <Select required name="specialty">
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione sua especialização" />
                         </SelectTrigger>
@@ -192,6 +224,7 @@ const Register = () => {
                         id="institution"
                         type="text"
                         placeholder="Hospital ou clínica"
+                        name="institution"
                         required
                       />
                     </div>
@@ -201,6 +234,7 @@ const Register = () => {
                         id="password"
                         type="password"
                         placeholder="Crie uma senha segura"
+                        name="password"
                         required
                       />
                     </div>
@@ -210,6 +244,7 @@ const Register = () => {
                         id="confirm-password"
                         type="password"
                         placeholder="Confirme sua senha"
+                        name="confirm-password"
                         required
                       />
                     </div>

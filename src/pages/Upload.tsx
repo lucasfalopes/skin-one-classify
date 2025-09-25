@@ -6,30 +6,49 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Upload as UploadIcon, Info, Home, Image, CheckCircle2, AlertCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { api, endpoints, UploadResponse } from "@/lib/api";
 
 const Upload = () => {
   const [uploadedImages, setUploadedImages] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
+  const { toast } = useToast();
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
-    if (files) {
-      setIsUploading(true);
-      // Simular upload
-      setTimeout(() => {
-        setUploadedImages(prev => prev + files.length);
-        setIsUploading(false);
-      }, 2000);
+    if (!files || files.length === 0) return;
+    const validFiles: File[] = [];
+    const maxBytes = 10 * 1024 * 1024; // 10MB
+    for (const file of Array.from(files)) {
+      if (file.size > maxBytes) {
+        toast({ variant: "destructive", title: "Arquivo muito grande", description: `${file.name} excede 10MB.` });
+        continue;
+      }
+      validFiles.push(file);
+    }
+    if (validFiles.length === 0) return;
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      for (const file of validFiles) {
+        formData.append("images", file);
+      }
+      const response = await api.post<UploadResponse>(endpoints.upload(), formData);
+      setUploadedImages(prev => prev + (response?.uploaded ?? validFiles.length));
+      toast({ title: "Upload concluído", description: `${response?.uploaded ?? validFiles.length} imagens enviadas.` });
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Falha no upload", description: error?.message ?? "Tente novamente." });
+    } finally {
+      setIsUploading(false);
+      // Reset file input to allow re-upload same files
+      try { event.currentTarget.value = ""; } catch {}
     }
   };
 
   const handleIngest = () => {
     if (uploadedImages > 0) {
-      // Simular processamento
-      setTimeout(() => {
-        alert(`${uploadedImages} imagens enviadas para classificação!`);
-        setUploadedImages(0);
-      }, 1000);
+      toast({ title: "Imagens prontas", description: "Redirecionando para classificação." });
+      window.location.href = "/classification";
     }
   };
 

@@ -9,6 +9,11 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Home, Info, LogOut, Eye, User, HelpCircle, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { api, endpoints, ClassifyRequest, ClassifyResponse } from "@/lib/api";
+import { clearAuthToken } from "@/lib/auth";
+import { useQuery } from "@tanstack/react-query";
+import { listImages } from "@/lib/images";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Classification = () => {
   const navigate = useNavigate();
@@ -19,12 +24,10 @@ const Classification = () => {
   const [showFeedbackForm, setShowFeedbackForm] = useState(false);
   const [isFirstClassification, setIsFirstClassification] = useState(true);
 
-  // Mock data - imagens para classificar
-  const mockImages = [
-    { id: 1, url: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=400&h=400&fit=crop", patient: "Paciente A" },
-    { id: 2, url: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?w=400&h=400&fit=crop", patient: "Paciente B" },
-    { id: 3, url: "https://images.unsplash.com/photo-1551601651-2a8555f1a136?w=400&h=400&fit=crop", patient: "Paciente C" },
-  ];
+  const { data: images = [], isLoading: isLoadingImages, isError: isImagesError } = useQuery({
+    queryKey: ["images"],
+    queryFn: listImages,
+  });
 
   useEffect(() => {
     // Verificar se usuário está logado
@@ -35,6 +38,7 @@ const Classification = () => {
   }, [navigate]);
 
   const handleLogout = () => {
+    clearAuthToken();
     localStorage.removeItem("skinone-user");
     toast({
       title: "Logout realizado",
@@ -43,7 +47,7 @@ const Classification = () => {
     navigate("/");
   };
 
-  const handleClassification = () => {
+  const handleClassification = async () => {
     if (!classification) {
       toast({
         variant: "destructive",
@@ -62,11 +66,19 @@ const Classification = () => {
       return;
     }
 
-    // Salvar classificação
-    toast({
-      title: "Classificação salva!",
-      description: `Imagem classificada como: ${classification}`,
-    });
+    try {
+      const current = mockImages[currentImageIndex];
+      const payload: ClassifyRequest = {
+        image_id: String(current.id),
+        stage: classification as ClassifyRequest["stage"],
+        justification: classification === "indefinido" ? justification : undefined,
+      };
+      const _response = await api.post<ClassifyResponse>(endpoints.classify(), payload);
+      toast({ title: "Classificação salva!", description: `Imagem classificada como: ${classification}` });
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Falha ao salvar", description: error?.message ?? "Tente novamente." });
+      return;
+    }
 
     // Mostrar formulário de feedback na primeira classificação
     if (isFirstClassification) {
@@ -87,7 +99,15 @@ const Classification = () => {
     }
   };
 
-  const currentImage = mockImages[currentImageIndex];
+  const hasBackendImages = images.length > 0;
+  const imageList = hasBackendImages
+    ? images
+    : [
+        { id: "sample-1", url: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=400&h=400&fit=crop", patient: "Paciente A" },
+        { id: "sample-2", url: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?w=400&h=400&fit=crop", patient: "Paciente B" },
+        { id: "sample-3", url: "https://images.unsplash.com/photo-1551601651-2a8555f1a136?w=400&h=400&fit=crop", patient: "Paciente C" },
+      ];
+  const currentImage = imageList[currentImageIndex];
 
   return (
     <div className="min-h-screen bg-background">
@@ -199,13 +219,19 @@ const Classification = () => {
                 <CardDescription>{currentImage.patient}</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="aspect-square bg-muted rounded-lg overflow-hidden">
-                  <img
-                    src={currentImage.url}
-                    alt="Lesão para classificação"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
+                {isLoadingImages ? (
+                  <div className="aspect-square bg-muted rounded-lg overflow-hidden">
+                    <Skeleton className="w-full h-full" />
+                  </div>
+                ) : (
+                  <div className="aspect-square bg-muted rounded-lg overflow-hidden">
+                    <img
+                      src={currentImage.url}
+                      alt="Lesão para classificação"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
                 <div className="mt-4 flex justify-center">
                   <Button variant="outline" size="sm">
                     <Eye className="w-4 h-4 mr-2" />
@@ -304,8 +330,9 @@ const Classification = () => {
                   size="lg" 
                   className="w-full"
                   onClick={handleClassification}
+                  disabled={isLoadingImages || (!hasBackendImages)}
                 >
-                  Confirmar Classificação
+                  {hasBackendImages ? "Confirmar Classificação" : "Aguardando imagens do backend"}
                 </Button>
               </CardContent>
             </Card>
