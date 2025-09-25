@@ -67,7 +67,7 @@ const Classification = () => {
     }
 
     try {
-      const current = mockImages[currentImageIndex];
+      const current = imageList[currentImageIndex];
       const payload: ClassifyRequest = {
         image_id: String(current.id),
         stage: classification as ClassifyRequest["stage"],

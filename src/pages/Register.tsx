@@ -15,18 +15,26 @@ const Register = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [specialty, setSpecialty] = useState("");
 
   const handleRegister = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsLoading(true);
     try {
       const formData = new FormData(event.currentTarget);
+      const password = String(formData.get("password"));
+      const confirm = String(formData.get("confirm-password"));
+      if (password !== confirm) {
+        toast({ variant: "destructive", title: "Senhas não conferem", description: "As senhas informadas são diferentes." });
+        setIsLoading(false);
+        return;
+      }
       const payload = {
         name: String(formData.get("name")),
         email: String(formData.get("email")),
-        password: String(formData.get("password")),
+        password,
         coren: String(formData.get("coren")),
-        specialty: String(formData.get("specialty")),
+        specialty: specialty || String(formData.get("specialty")),
         institution: String(formData.get("institution")),
       };
       await api.post(endpoints.register(), payload);
@@ -206,7 +214,7 @@ const Register = () => {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="specialty">Especialização</Label>
-                      <Select required name="specialty">
+                      <Select required name="specialty" value={specialty} onValueChange={setSpecialty}>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione sua especialização" />
                         </SelectTrigger>
