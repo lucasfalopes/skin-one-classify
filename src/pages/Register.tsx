@@ -10,13 +10,12 @@ import { Home, UserPlus, LogIn, Stethoscope } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { api, endpoints, LoginResponse } from "@/lib/api";
 import { setAuthToken } from "@/lib/auth";
-import { GoogleLogin, googleLogout } from "@react-oauth/google";
 
 const Register = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [specialty, setSpecialty] = useState("");
+  const [specialty] = useState("enfermagem");
 
   const handleRegister = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -35,8 +34,7 @@ const Register = () => {
         email: String(formData.get("email")),
         password,
         coren: String(formData.get("coren")),
-        specialty: specialty || String(formData.get("specialty")),
-        institution: String(formData.get("institution")),
+        specialty: "enfermagem",
       };
       await api.post(endpoints.register(), payload);
       toast({
@@ -194,21 +192,7 @@ const Register = () => {
                     </Button>
                   </form>
                 </CardContent>
-                <div className="px-6 pb-6">
-                  <div className="relative my-4">
-                    <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-card px-2 text-muted-foreground">ou</span>
-                    </div>
-                  </div>
-                  {import.meta.env.VITE_GOOGLE_CLIENT_ID ? (
-                    <GoogleLogin onSuccess={onGoogleLoginSuccess} onError={onGoogleLoginError} ux_mode="popup" useOneTap={false} />
-                  ) : (
-                    <p className="text-sm text-muted-foreground text-center">
-                      Configure VITE_GOOGLE_CLIENT_ID para habilitar login com Google
-                    </p>
-                  )}
-                </div>
+                {/* Google login removido */}
               </Card>
             </TabsContent>
 
@@ -254,29 +238,10 @@ const Register = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="specialty">Especialização</Label>
-                      <Select required name="specialty" value={specialty} onValueChange={setSpecialty}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione sua especialização" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="estomaoterapeuta">Estomaoterapeuta</SelectItem>
-                          <SelectItem value="dermatologia">Dermatologia</SelectItem>
-                          <SelectItem value="enfermagem">Enfermagem</SelectItem>
-                          <SelectItem value="cirurgia-plastica">Cirurgia Plástica</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Label>Especialização</Label>
+                      <Input value="Enfermagem" disabled />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="institution">Instituição</Label>
-                      <Input
-                        id="institution"
-                        type="text"
-                        placeholder="Hospital ou clínica"
-                        name="institution"
-                        required
-                      />
-                    </div>
+                    {/* Campo Instituição removido */}
                     <div className="space-y-2">
                       <Label htmlFor="password">Senha</Label>
                       <Input
@@ -302,21 +267,7 @@ const Register = () => {
                     </Button>
                   </form>
                 </CardContent>
-                <div className="px-6 pb-6">
-                  <div className="relative my-4">
-                    <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-card px-2 text-muted-foreground">ou</span>
-                    </div>
-                  </div>
-                  {import.meta.env.VITE_GOOGLE_CLIENT_ID ? (
-                    <GoogleLogin onSuccess={onGoogleLoginSuccess} onError={onGoogleLoginError} ux_mode="popup" useOneTap={false} text="signup_with" />
-                  ) : (
-                    <p className="text-sm text-muted-foreground text-center">
-                      Configure VITE_GOOGLE_CLIENT_ID para habilitar cadastro com Google
-                    </p>
-                  )}
-                </div>
+                {/* Google cadastro removido */}
               </Card>
             </TabsContent>
           </Tabs>

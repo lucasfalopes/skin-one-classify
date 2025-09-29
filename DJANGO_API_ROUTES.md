@@ -14,11 +14,7 @@ All JSON responses should use `application/json`. Use JWT or token-based auth; t
   - Request: { email, password }
   - Response: 200 OK, { token, user: { id, name, email } }
 
-- POST /auth/google/
-  - Request: { id_token: string }
-  - Validates Google ID token (aud = your client_id)
-  - If user exists, returns JWT; else creates user then returns JWT
-  - Response: 200 OK, { token, user: { id, name, email } }
+<!-- Google auth removed from frontend; backend route no longer needed. -->
 
 - GET /auth/me/
   - Auth required

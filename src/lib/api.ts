@@ -101,7 +101,6 @@ export interface ClassifyResponse { id: string; image_id: string; stage: string;
 export const endpoints = {
   register: () => "/auth/register/",
   login: () => "/auth/login/",
-  loginWithGoogle: () => "/auth/google/",
   me: () => "/auth/me/",
   upload: () => "/images/upload/",
   listImages: () => "/images/",
