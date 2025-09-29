@@ -292,6 +292,9 @@ const Classification = () => {
                       <RadioGroupItem value="nao_classificavel" id="nao_classificavel" />
                       <Label htmlFor="nao_classificavel" className="flex-1 cursor-pointer">
                         <span className="font-medium">Não classificável</span>
+                        <span className="block text-sm text-muted-foreground">
+                          Impossível determinar o estágio no momento
+                        </span>
                       </Label>
                     </div>
                     <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
