@@ -59,11 +59,11 @@ const Classification = () => {
       return;
     }
 
-    if (classification === "indefinido" && !justification.trim()) {
+    if (classification === "nao_classificavel" && !justification.trim()) {
       toast({
         variant: "destructive",
         title: "Justificativa necessária",
-        description: "Por favor, justifique por que a classificação está indefinida.",
+        description: "Por favor, justifique por que a lesão é não classificável.",
       });
       return;
     }
@@ -76,8 +76,8 @@ const Classification = () => {
         const current = imageList[currentImageIndex];
         const payload: ClassifyRequest = {
           image_id: String(current.id),
-          stage: classification as ClassifyRequest["stage"],
-          justification: classification === "indefinido" ? justification : undefined,
+        stage: classification as ClassifyRequest["stage"],
+        justification: classification === "nao_classificavel" ? justification : undefined,
         };
         const _response = await api.post<ClassifyResponse>(endpoints.classify(), payload);
         toast({ title: "Classificação salva!", description: `Imagem classificada como: ${classification}` });
@@ -295,33 +295,33 @@ const Classification = () => {
                         </span>
                       </Label>
                     </div>
-                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
-                      <RadioGroupItem value="inexistente" id="inexistente" />
-                      <Label htmlFor="inexistente" className="flex-1 cursor-pointer">
-                        <span className="font-medium">Inexistente</span>
-                        <span className="block text-sm text-muted-foreground">
-                          Sem lesão visível
-                        </span>
-                      </Label>
-                    </div>
                     <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted border border-border">
-                      <RadioGroupItem value="indefinido" id="indefinido" />
-                      <Label htmlFor="indefinido" className="flex-1 cursor-pointer">
+                      <RadioGroupItem value="nao_classificavel" id="nao_classificavel" />
+                      <Label htmlFor="nao_classificavel" className="flex-1 cursor-pointer">
                         <span className="font-medium flex items-center gap-2">
                           <HelpCircle className="w-4 h-4" />
-                          Indefinido / Não sei
+                          Não classificável
                         </span>
                         <span className="block text-sm text-muted-foreground">
                           Requer justificativa
                         </span>
                       </Label>
                     </div>
+                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
+                      <RadioGroupItem value="dtpi" id="dtpi" />
+                      <Label htmlFor="dtpi" className="flex-1 cursor-pointer">
+                        <span className="font-medium">DTPI</span>
+                        <span className="block text-sm text-muted-foreground">
+                          Lesão por pressão de tecido profundo
+                        </span>
+                      </Label>
+                    </div>
                   </div>
                 </RadioGroup>
 
-                {classification === "indefinido" && (
+                {classification === "nao_classificavel" && (
                   <div className="space-y-2">
-                    <Label htmlFor="justification">Justificativa (obrigatória)</Label>
+                    <Label htmlFor="justification">Justificativa (obrigatória para não classificável)</Label>
                     <Textarea
                       id="justification"
                       value={justification}
