@@ -288,15 +288,12 @@ const Classification = () => {
                         </span>
                       </Label>
                     </div>
-                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted border border-border">
+                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
                       <RadioGroupItem value="nao_classificavel" id="nao_classificavel" />
                       <Label htmlFor="nao_classificavel" className="flex-1 cursor-pointer">
                         <span className="font-medium flex items-center gap-2">
                           <HelpCircle className="w-4 h-4" />
                           Não classificável
-                        </span>
-                        <span className="block text-sm text-muted-foreground">
-                          Requer justificativa
                         </span>
                       </Label>
                     </div>
