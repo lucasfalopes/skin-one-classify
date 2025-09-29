@@ -30,7 +30,9 @@ const Classification = () => {
   });
 
   useEffect(() => {
-    // Verificar se usuário está logado
+    // Verificar se usuário está logado, respeitando bypass em dev
+    const bypass = import.meta.env.VITE_BYPASS_AUTH === 'true';
+    if (bypass) return;
     const user = localStorage.getItem("skinone-user");
     if (!user) {
       navigate("/register");
