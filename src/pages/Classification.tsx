@@ -68,18 +68,23 @@ const Classification = () => {
       return;
     }
 
-    try {
-      const current = imageList[currentImageIndex];
-      const payload: ClassifyRequest = {
-        image_id: String(current.id),
-        stage: classification as ClassifyRequest["stage"],
-        justification: classification === "indefinido" ? justification : undefined,
-      };
-      const _response = await api.post<ClassifyResponse>(endpoints.classify(), payload);
-      toast({ title: "Classificação salva!", description: `Imagem classificada como: ${classification}` });
-    } catch (error: any) {
-      toast({ variant: "destructive", title: "Falha ao salvar", description: error?.message ?? "Tente novamente." });
-      return;
+    if (images.length === 0) {
+      // Demo mode: sem backend, apenas simula sucesso
+      toast({ title: "Classificação salva (demo)", description: `Imagem classificada como: ${classification}` });
+    } else {
+      try {
+        const current = imageList[currentImageIndex];
+        const payload: ClassifyRequest = {
+          image_id: String(current.id),
+          stage: classification as ClassifyRequest["stage"],
+          justification: classification === "indefinido" ? justification : undefined,
+        };
+        const _response = await api.post<ClassifyResponse>(endpoints.classify(), payload);
+        toast({ title: "Classificação salva!", description: `Imagem classificada como: ${classification}` });
+      } catch (error: any) {
+        toast({ variant: "destructive", title: "Falha ao salvar", description: error?.message ?? "Tente novamente." });
+        return;
+      }
     }
 
     // Mostrar formulário de feedback na primeira classificação
@@ -89,7 +94,7 @@ const Classification = () => {
     }
 
     // Próxima imagem
-    if (currentImageIndex < mockImages.length - 1) {
+    if (currentImageIndex < imageList.length - 1) {
       setCurrentImageIndex(prev => prev + 1);
       setClassification("");
       setJustification("");
@@ -145,7 +150,7 @@ const Classification = () => {
             <div>
               <h1 className="text-3xl font-bold text-foreground">Classificação de Lesões</h1>
               <p className="text-muted-foreground">
-                Imagem {currentImageIndex + 1} de {mockImages.length} • {currentImage.patient}
+                Imagem {currentImageIndex + 1} de {imageList.length} • {currentImage.patient}
               </p>
             </div>
             
@@ -332,9 +337,9 @@ const Classification = () => {
                   size="lg" 
                   className="w-full"
                   onClick={handleClassification}
-                  disabled={isLoadingImages || (!hasBackendImages)}
+                  disabled={isLoadingImages}
                 >
-                  {hasBackendImages ? "Confirmar Classificação" : "Aguardando imagens do backend"}
+                  Confirmar Classificação
                 </Button>
               </CardContent>
             </Card>
