@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
-import { Home, Info, LogOut, Eye, User, HelpCircle, Star } from "lucide-react";
+import { Home, Info, LogOut, Eye, User, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { api, endpoints, ClassifyRequest, ClassifyResponse } from "@/lib/api";
 import { clearAuthToken } from "@/lib/auth";
@@ -291,10 +291,7 @@ const Classification = () => {
                     <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
                       <RadioGroupItem value="nao_classificavel" id="nao_classificavel" />
                       <Label htmlFor="nao_classificavel" className="flex-1 cursor-pointer">
-                        <span className="font-medium flex items-center gap-2">
-                          <HelpCircle className="w-4 h-4" />
-                          Não classificável
-                        </span>
+                        <span className="font-medium">Não classificável</span>
                       </Label>
                     </div>
                     <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
