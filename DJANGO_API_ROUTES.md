@@ -36,7 +36,7 @@ All JSON responses should use `application/json`. Use JWT or token-based auth; t
 
 - POST /classifications/
   - Auth required
-  - Request: { image_id: string, stage: "estagio1"|"estagio2"|"estagio3"|"estagio4"|"nao_classificavel"|"dtpi", justification?: string }
+  - Request: { image_id: string, stage: "estagio1"|"estagio2"|"estagio3"|"estagio4"|"nao_classificavel"|"dtpi", observations?: string }
   - Response: 201 Created, { id, image_id, stage, created_at }
 
 - GET /classifications/?image_id=<id>

@@ -95,7 +95,11 @@ export interface RegisterRequest { name: string; email: string; password: string
 export interface LoginRequest { email: string; password: string }
 
 export interface UploadResponse { upload_batch_id: string; uploaded: number }
-export interface ClassifyRequest { image_id: string; stage: "estagio1" | "estagio2" | "estagio3" | "estagio4" | "nao_classificavel" | "dtpi"; justification?: string }
+export interface ClassifyRequest {
+  image_id: string;
+  stage: "estagio1" | "estagio2" | "estagio3" | "estagio4" | "nao_classificavel" | "dtpi";
+  observations?: string;
+}
 export interface ClassifyResponse { id: string; image_id: string; stage: string; created_at: string }
 
 export const endpoints = {

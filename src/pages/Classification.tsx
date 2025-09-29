@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Switch } from "@/components/ui/switch";
 import { Home, Info, LogOut, Eye, User, HelpCircle, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { api, endpoints, ClassifyRequest, ClassifyResponse } from "@/lib/api";
@@ -20,7 +21,8 @@ const Classification = () => {
   const { toast } = useToast();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [classification, setClassification] = useState("");
-  const [justification, setJustification] = useState("");
+  const [observationsEnabled, setObservationsEnabled] = useState(false);
+  const [observations, setObservations] = useState("");
   const [showFeedbackForm, setShowFeedbackForm] = useState(false);
   const [isFirstClassification, setIsFirstClassification] = useState(true);
 
@@ -59,25 +61,16 @@ const Classification = () => {
       return;
     }
 
-    if (classification === "nao_classificavel" && !justification.trim()) {
-      toast({
-        variant: "destructive",
-        title: "Justificativa necessária",
-        description: "Por favor, justifique por que a lesão é não classificável.",
-      });
-      return;
-    }
-
     if (images.length === 0) {
       // Demo mode: sem backend, apenas simula sucesso
-      toast({ title: "Classificação salva (demo)", description: `Imagem classificada como: ${classification}` });
+      toast({ title: "Classificação salva (demo)", description: `Imagem classificada como: ${classification}${observationsEnabled && observations ? ` • Obs: ${observations}` : ""}` });
     } else {
       try {
         const current = imageList[currentImageIndex];
         const payload: ClassifyRequest = {
           image_id: String(current.id),
-        stage: classification as ClassifyRequest["stage"],
-        justification: classification === "nao_classificavel" ? justification : undefined,
+          stage: classification as ClassifyRequest["stage"],
+          observations: observationsEnabled && observations ? observations : undefined,
         };
         const _response = await api.post<ClassifyResponse>(endpoints.classify(), payload);
         toast({ title: "Classificação salva!", description: `Imagem classificada como: ${classification}` });
@@ -97,7 +90,7 @@ const Classification = () => {
     if (currentImageIndex < imageList.length - 1) {
       setCurrentImageIndex(prev => prev + 1);
       setClassification("");
-      setJustification("");
+      setObservations("");
     } else {
       toast({
         title: "Todas as imagens foram classificadas!",
@@ -319,18 +312,24 @@ const Classification = () => {
                   </div>
                 </RadioGroup>
 
-                {classification === "nao_classificavel" && (
-                  <div className="space-y-2">
-                    <Label htmlFor="justification">Justificativa (obrigatória para não classificável)</Label>
-                    <Textarea
-                      id="justification"
-                      value={justification}
-                      onChange={(e) => setJustification(e.target.value)}
-                      placeholder="Explique por que a classificação está indefinida e o que está dificultando a análise..."
-                      rows={4}
-                    />
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="obs-toggle" className="cursor-pointer">Adicionar observações</Label>
+                    <Switch id="obs-toggle" checked={observationsEnabled} onCheckedChange={setObservationsEnabled} />
                   </div>
-                )}
+                  {observationsEnabled && (
+                    <div className="space-y-2">
+                      <Label htmlFor="observations">Observações (opcional)</Label>
+                      <Textarea
+                        id="observations"
+                        value={observations}
+                        onChange={(e) => setObservations(e.target.value)}
+                        placeholder="Notas clínicas adicionais, contexto, dúvidas..."
+                        rows={4}
+                      />
+                    </div>
+                  )}
+                </div>
 
                 <Button 
                   variant="medical" 
