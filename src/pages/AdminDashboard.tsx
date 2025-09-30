@@ -14,6 +14,8 @@ import { format } from "date-fns";
 
 function isAdminUser(): boolean {
   try {
+    const bypass = import.meta.env.VITE_BYPASS_AUTH === "true";
+    if (bypass) return true;
     const user = JSON.parse(localStorage.getItem("skinone-user") || "null");
     const envEmails = (import.meta.env.VITE_ADMIN_EMAILS || "") as string;
     const adminEmails = envEmails

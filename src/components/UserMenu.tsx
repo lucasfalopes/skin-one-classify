@@ -46,6 +46,8 @@ const UserMenu = () => {
 
   const userIsAdmin = (() => {
     try {
+      const bypass = import.meta.env.VITE_BYPASS_AUTH === 'true';
+      if (bypass) return true;
       const user = JSON.parse(localStorage.getItem("skinone-user") || "null");
       const env = (import.meta.env.VITE_ADMIN_EMAILS || "") as string;
       const allow = env
