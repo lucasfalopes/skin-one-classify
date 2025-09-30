@@ -102,11 +102,49 @@ export interface ClassifyRequest {
 }
 export interface ClassifyResponse { id: string; image_id: string; stage: string; created_at: string }
 
+// Admin types
+export interface AdminUserSummary {
+  id: string;
+  name: string;
+  email: string;
+  classification_count: number;
+  last_active?: string;
+}
+
+export interface AdminMetrics {
+  total_users: number;
+  total_images: number;
+  classified_images_count: number;
+  unclassified_images_count: number;
+  classifications_per_category: Record<string, number>;
+  classifications_by_user: AdminUserSummary[];
+  daily_classifications?: Array<{ date: string; count: number }>;
+}
+
 export const endpoints = {
   register: () => "/auth/register/",
   login: () => "/auth/login/",
+  // Present in some screens for compatibility; can be no-op on backend
+  loginWithGoogle: () => "/auth/google/",
   me: () => "/auth/me/",
   upload: () => "/images/upload/",
   listImages: () => "/images/",
   classify: () => "/classifications/",
+  admin: {
+    metrics: (params?: { from?: string; to?: string }) => {
+      const search = new URLSearchParams();
+      if (params?.from) search.set("from", params.from);
+      if (params?.to) search.set("to", params.to);
+      const qs = search.toString();
+      return `/admin/metrics/${qs ? `?${qs}` : ""}`;
+    },
+    users: (params?: { q?: string; limit?: number; offset?: number }) => {
+      const search = new URLSearchParams();
+      if (params?.q) search.set("q", params.q);
+      if (typeof params?.limit === "number") search.set("limit", String(params.limit));
+      if (typeof params?.offset === "number") search.set("offset", String(params.offset));
+      const qs = search.toString();
+      return `/admin/users/${qs ? `?${qs}` : ""}`;
+    },
+  },
 };

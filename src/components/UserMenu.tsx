@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { User, LogOut, Upload, BarChart3 } from "lucide-react";
+import { User, LogOut, Upload, BarChart3, Shield } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { clearAuthToken, getAuthToken } from "@/lib/auth";
 
@@ -44,6 +44,20 @@ const UserMenu = () => {
     return null;
   }
 
+  const userIsAdmin = (() => {
+    try {
+      const user = JSON.parse(localStorage.getItem("skinone-user") || "null");
+      const env = (import.meta.env.VITE_ADMIN_EMAILS || "") as string;
+      const allow = env
+        .split(",")
+        .map((e) => e.trim().toLowerCase())
+        .filter(Boolean);
+      return Boolean(user?.is_admin || (user?.email && allow.includes(String(user.email).toLowerCase())));
+    } catch {
+      return false;
+    }
+  })();
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -64,6 +78,12 @@ const UserMenu = () => {
           <BarChart3 className="mr-2 h-4 w-4" />
           <span>Classificação</span>
         </DropdownMenuItem>
+        {userIsAdmin && (
+          <DropdownMenuItem onClick={() => navigate("/admin")} className="cursor-pointer">
+            <Shield className="mr-2 h-4 w-4" />
+            <span>Dashboard Admin</span>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive">
           <LogOut className="mr-2 h-4 w-4" />

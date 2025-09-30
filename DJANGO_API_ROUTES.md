@@ -14,7 +14,7 @@ All JSON responses should use `application/json`. Use JWT or token-based auth; t
   - Request: { email, password }
   - Response: 200 OK, { token, user: { id, name, email } }
 
-<!-- Google auth removed from frontend; backend route no longer needed. -->
+<!-- Google auth não terá mais. -->
 
 - GET /auth/me/
   - Auth required
@@ -42,6 +42,27 @@ All JSON responses should use `application/json`. Use JWT or token-based auth; t
 - GET /classifications/?image_id=<id>
   - Auth required
   - Response: 200 OK, [ { id, image_id, stage, created_at } ]
+
+## Admin
+
+- GET /admin/metrics/
+  - Auth required (admin only)
+  - Query params (opcional): `from=YYYY-MM-DD&to=YYYY-MM-DD`
+  - Response: 200 OK
+    - {
+      total_users: number,
+      total_images: number,
+      classified_images_count: number,
+      unclassified_images_count: number,
+      classifications_per_category: { [stage: string]: number },
+      classifications_by_user: [ { id, name, email, classification_count, last_active? } ],
+      daily_classifications?: [ { date: string, count: number } ]
+    }
+
+- GET /admin/users/
+  - Auth required (admin only)
+  - Query params (opcional): `q`, `limit`, `offset`
+  - Response: 200 OK, [ { id, name, email, classification_count, last_active? } ]
 
 ## Errors
 
