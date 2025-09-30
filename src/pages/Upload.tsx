@@ -7,14 +7,26 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Upload as UploadIcon, Info, Home, Image, CheckCircle2, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { api, endpoints, UploadResponse } from "@/lib/api";
+import { api, endpoints, UploadResponse, UploadSingleResponse, UploadedImage, ClassifyRequest } from "@/lib/api";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 const Upload = () => {
-  const [uploadedImages, setUploadedImages] = useState(0);
+  const [uploadedImages, setUploadedImages] = useState(0); // batch counter
   const [isUploading, setIsUploading] = useState(false);
+
+  // Single upload + classify state
+  const [singleImage, setSingleImage] = useState<UploadedImage | null>(null);
+  const [singleStage, setSingleStage] = useState<ClassifyRequest["stage"] | "">("");
+  const [singleUploading, setSingleUploading] = useState(false);
+  const [classifyingSingle, setClassifyingSingle] = useState(false);
+
+  // Batch with stage state
+  const [batchStage, setBatchStage] = useState<ClassifyRequest["stage"]>("estagio1");
   const { toast } = useToast();
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBatchUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
     const validFiles: File[] = [];
@@ -41,6 +53,73 @@ const Upload = () => {
     } finally {
       setIsUploading(false);
       // Reset file input to allow re-upload same files
+      try { event.currentTarget.value = ""; } catch {}
+    }
+  };
+
+  const handleSingleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      toast({ variant: "destructive", title: "Arquivo muito grande", description: `${file.name} excede 10MB.` });
+      return;
+    }
+    setSingleUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+      const response = await api.post<UploadSingleResponse>(endpoints.uploadSingle(), formData);
+      setSingleImage(response.image);
+      toast({ title: "Upload concluído", description: `Imagem enviada. Selecione uma classificação.` });
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Falha no upload", description: error?.message ?? "Tente novamente." });
+    } finally {
+      setSingleUploading(false);
+      try { event.currentTarget.value = ""; } catch {}
+    }
+  };
+
+  const handleClassifySingle = async () => {
+    if (!singleImage || !singleStage) {
+      toast({ variant: "destructive", title: "Selecione a classificação", description: "Escolha um estágio para continuar." });
+      return;
+    }
+    setClassifyingSingle(true);
+    try {
+      await api.post(endpoints.classify(), { image_id: String(singleImage.id), stage: singleStage } satisfies ClassifyRequest);
+      toast({ title: "Classificação salva", description: `Imagem classificada como ${singleStage}.` });
+      setSingleImage(null);
+      setSingleStage("");
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Falha ao classificar", description: error?.message ?? "Tente novamente." });
+    } finally {
+      setClassifyingSingle(false);
+    }
+  };
+
+  const handleBatchWithStageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+    const validFiles: File[] = [];
+    const maxBytes = 10 * 1024 * 1024;
+    for (const file of Array.from(files)) {
+      if (file.size > maxBytes) {
+        toast({ variant: "destructive", title: "Arquivo muito grande", description: `${file.name} excede 10MB.` });
+        continue;
+      }
+      validFiles.push(file);
+    }
+    if (validFiles.length === 0) return;
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      for (const f of validFiles) formData.append("images", f);
+      const res = await api.post(endpoints.uploadBatchWithStage(batchStage), formData);
+      toast({ title: "Upload + classificação concluídos", description: `${validFiles.length} imagens como ${batchStage}.` });
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Falha no upload/classificação", description: error?.message ?? "Tente novamente." });
+    } finally {
+      setIsUploading(false);
       try { event.currentTarget.value = ""; } catch {}
     }
   };
@@ -133,111 +212,205 @@ const Upload = () => {
             </Dialog>
           </div>
 
-          {/* Upload Area */}
-          <Card className="bg-gradient-card shadow-card">
-            <CardHeader className="text-center">
-              <CardTitle className="flex items-center justify-center gap-2">
-                <UploadIcon className="w-6 h-6" />
-                Área de Upload
-              </CardTitle>
-              <CardDescription>
-                Selecione as imagens das lesões de pele para envio
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary transition-colors">
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                  id="file-upload"
-                />
-                <label
-                  htmlFor="file-upload"
-                  className="cursor-pointer flex flex-col items-center space-y-4"
-                >
-                  <Image className="w-12 h-12 text-muted-foreground" />
-                  <div className="space-y-1">
-                    <p className="text-lg font-medium">Clique para selecionar imagens</p>
-                    <p className="text-sm text-muted-foreground">
-                      Ou arraste e solte aqui (máximo 10MB por imagem)
-                    </p>
+          {/* Upload Modes */}
+          <Tabs defaultValue="batch" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="batch">Lote (Padrão)</TabsTrigger>
+              <TabsTrigger value="single">Individual + Classificar</TabsTrigger>
+              <TabsTrigger value="batchStage">Lote com Classificação</TabsTrigger>
+            </TabsList>
+
+            {/* Batch (existing) */}
+            <TabsContent value="batch" className="space-y-6">
+              <Card className="bg-gradient-card shadow-card">
+                <CardHeader className="text-center">
+                  <CardTitle className="flex items-center justify-center gap-2">
+                    <UploadIcon className="w-6 h-6" />
+                    Upload em Lote
+                  </CardTitle>
+                  <CardDescription>Selecione múltiplas imagens</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary transition-colors">
+                    <input type="file" multiple accept="image/*" onChange={handleBatchUpload} className="hidden" id="file-upload-batch" />
+                    <label htmlFor="file-upload-batch" className="cursor-pointer flex flex-col items-center space-y-4">
+                      <Image className="w-12 h-12 text-muted-foreground" />
+                      <div className="space-y-1">
+                        <p className="text-lg font-medium">Clique para selecionar imagens</p>
+                        <p className="text-sm text-muted-foreground">Ou arraste e solte aqui (máx 10MB)</p>
+                      </div>
+                      <Button variant="medical" disabled={isUploading}>{isUploading ? "Enviando..." : "Selecionar Arquivos"}</Button>
+                    </label>
                   </div>
-                  <Button variant="medical" disabled={isUploading}>
-                    {isUploading ? "Enviando..." : "Selecionar Arquivos"}
-                  </Button>
-                </label>
-              </div>
-
-              {isUploading && (
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Fazendo upload das imagens...</p>
-                  <Progress value={75} className="w-full" />
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Dashboard */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="shadow-card">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Imagens Enviadas
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center space-x-2">
-                  <span className="text-2xl font-bold">{uploadedImages}</span>
-                  <Badge variant={uploadedImages > 0 ? "default" : "secondary"}>
-                    {uploadedImages > 0 ? "Prontas" : "Nenhuma"}
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="shadow-card">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Status
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center space-x-2">
-                  {uploadedImages > 0 ? (
-                    <CheckCircle2 className="w-5 h-5 text-success" />
-                  ) : (
-                    <AlertCircle className="w-5 h-5 text-muted-foreground" />
+                  {isUploading && (
+                    <div className="space-y-2">
+                      <p className="text-sm text-muted-foreground">Fazendo upload das imagens...</p>
+                      <Progress value={75} className="w-full" />
+                    </div>
                   )}
-                  <span className="font-medium">
-                    {uploadedImages > 0 ? "Pronto para ingestão" : "Aguardando upload"}
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
-            <Card className="shadow-card">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Ação
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Button
-                  variant="success"
-                  size="sm"
-                  onClick={handleIngest}
-                  disabled={uploadedImages === 0}
-                  className="w-full"
-                >
-                  <CheckCircle2 className="w-4 h-4 mr-2" />
-                  Finalizar Envio
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card className="shadow-card">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">Imagens Enviadas</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-2xl font-bold">{uploadedImages}</span>
+                      <Badge variant={uploadedImages > 0 ? "default" : "secondary"}>{uploadedImages > 0 ? "Prontas" : "Nenhuma"}</Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="shadow-card">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">Status</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center space-x-2">
+                      {uploadedImages > 0 ? <CheckCircle2 className="w-5 h-5 text-success" /> : <AlertCircle className="w-5 h-5 text-muted-foreground" />}
+                      <span className="font-medium">{uploadedImages > 0 ? "Pronto para ingestão" : "Aguardando upload"}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="shadow-card">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">Ação</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Button variant="success" size="sm" onClick={handleIngest} disabled={uploadedImages === 0} className="w-full">
+                      <CheckCircle2 className="w-4 h-4 mr-2" /> Finalizar Envio
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            {/* Single + classify */}
+            <TabsContent value="single" className="space-y-6">
+              <Card className="shadow-card">
+                <CardHeader className="text-center">
+                  <CardTitle className="flex items-center justify-center gap-2">
+                    <UploadIcon className="w-6 h-6" />
+                    Upload Individual
+                  </CardTitle>
+                  <CardDescription>Envie uma imagem e classifique em seguida</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary transition-colors">
+                    <input type="file" accept="image/*" onChange={handleSingleUpload} className="hidden" id="file-upload-single" />
+                    <label htmlFor="file-upload-single" className="cursor-pointer flex flex-col items-center space-y-4">
+                      <Image className="w-12 h-12 text-muted-foreground" />
+                      <div className="space-y-1">
+                        <p className="text-lg font-medium">Clique para selecionar uma imagem</p>
+                        <p className="text-sm text-muted-foreground">Máximo 10MB</p>
+                      </div>
+                      <Button variant="medical" disabled={singleUploading}>{singleUploading ? "Enviando..." : "Selecionar Arquivo"}</Button>
+                    </label>
+                  </div>
+
+                  {singleImage && (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <Card className="shadow-card">
+                        <CardHeader>
+                          <CardTitle>Pré-visualização</CardTitle>
+                          <CardDescription>Imagem enviada</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="aspect-square bg-muted rounded-lg overflow-hidden">
+                            <img src={singleImage.url} alt="Imagem enviada" className="w-full h-full object-cover" />
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="shadow-card">
+                        <CardHeader>
+                          <CardTitle>Classificação</CardTitle>
+                          <CardDescription>Selecione o estágio</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <RadioGroup value={singleStage} onValueChange={(v) => setSingleStage(v as ClassifyRequest["stage"]) }>
+                            <div className="space-y-2">
+                              <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-muted">
+                                <RadioGroupItem value="estagio1" id="s1" />
+                                <Label htmlFor="s1" className="flex-1 cursor-pointer">Estágio 1</Label>
+                              </div>
+                              <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-muted">
+                                <RadioGroupItem value="estagio2" id="s2" />
+                                <Label htmlFor="s2" className="flex-1 cursor-pointer">Estágio 2</Label>
+                              </div>
+                              <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-muted">
+                                <RadioGroupItem value="estagio3" id="s3" />
+                                <Label htmlFor="s3" className="flex-1 cursor-pointer">Estágio 3</Label>
+                              </div>
+                              <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-muted">
+                                <RadioGroupItem value="estagio4" id="s4" />
+                                <Label htmlFor="s4" className="flex-1 cursor-pointer">Estágio 4</Label>
+                              </div>
+                              <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-muted">
+                                <RadioGroupItem value="nao_classificavel" id="snc" />
+                                <Label htmlFor="snc" className="flex-1 cursor-pointer">Não classificável</Label>
+                              </div>
+                              <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-muted">
+                                <RadioGroupItem value="dtpi" id="sdtpi" />
+                                <Label htmlFor="sdtpi" className="flex-1 cursor-pointer">DTPI</Label>
+                              </div>
+                            </div>
+                          </RadioGroup>
+                          <Button variant="medical" className="w-full" onClick={handleClassifySingle} disabled={classifyingSingle}>
+                            {classifyingSingle ? "Classificando..." : "Salvar Classificação"}
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Batch with pre-defined stage */}
+            <TabsContent value="batchStage" className="space-y-6">
+              <Card className="shadow-card">
+                <CardHeader className="text-center">
+                  <CardTitle className="flex items-center justify-center gap-2">
+                    <UploadIcon className="w-6 h-6" />
+                    Upload em Lote com Classificação
+                  </CardTitle>
+                  <CardDescription>Selecione o estágio e envie múltiplas imagens</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div>
+                    <Label className="mb-2 block">Classificação para todas as imagens</Label>
+                    <RadioGroup value={batchStage} onValueChange={(v) => setBatchStage(v as ClassifyRequest["stage"]) }>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                        <label className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted"><RadioGroupItem value="estagio1" id="b1" /><span>Estágio 1</span></label>
+                        <label className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted"><RadioGroupItem value="estagio2" id="b2" /><span>Estágio 2</span></label>
+                        <label className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted"><RadioGroupItem value="estagio3" id="b3" /><span>Estágio 3</span></label>
+                        <label className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted"><RadioGroupItem value="estagio4" id="b4" /><span>Estágio 4</span></label>
+                        <label className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted"><RadioGroupItem value="nao_classificavel" id="bnc" /><span>Não classificável</span></label>
+                        <label className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted"><RadioGroupItem value="dtpi" id="bdtpi" /><span>DTPI</span></label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+
+                  <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary transition-colors">
+                    <input type="file" multiple accept="image/*" onChange={handleBatchWithStageUpload} className="hidden" id="file-upload-batch-stage" />
+                    <label htmlFor="file-upload-batch-stage" className="cursor-pointer flex flex-col items-center space-y-4">
+                      <Image className="w-12 h-12 text-muted-foreground" />
+                      <div className="space-y-1">
+                        <p className="text-lg font-medium">Clique para selecionar imagens</p>
+                        <p className="text-sm text-muted-foreground">Todas serão marcadas como {batchStage}</p>
+                      </div>
+                      <Button variant="medical" disabled={isUploading}>{isUploading ? "Enviando..." : "Selecionar Arquivos"}</Button>
+                    </label>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
       </main>
     </div>

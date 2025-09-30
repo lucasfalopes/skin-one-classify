@@ -95,6 +95,9 @@ export interface RegisterRequest { name: string; email: string; password: string
 export interface LoginRequest { email: string; password: string }
 
 export interface UploadResponse { upload_batch_id: string; uploaded: number }
+export interface UploadedImage { id: string; url: string }
+export interface UploadSingleResponse { image: UploadedImage }
+export interface UploadBatchWithStageResponse { upload_batch_id: string; uploaded: number; stage: ClassifyRequest["stage"]; classified?: number }
 export interface ClassifyRequest {
   image_id: string;
   stage: "estagio1" | "estagio2" | "estagio3" | "estagio4" | "nao_classificavel" | "dtpi";
@@ -128,6 +131,8 @@ export const endpoints = {
   loginWithGoogle: () => "/auth/google/",
   me: () => "/auth/me/",
   upload: () => "/images/upload/",
+  uploadSingle: () => "/images/upload/single/",
+  uploadBatchWithStage: (stage: ClassifyRequest["stage"]) => `/images/upload/with-stage/?stage=${encodeURIComponent(stage)}`,
   listImages: () => "/images/",
   classify: () => "/classifications/",
   admin: {
