@@ -38,11 +38,12 @@ All JSON responses should use `application/json`. Use JWT or token-based auth; t
   - Field: image
   - Response: 201 Created, { image: { id, url } }
 
-- POST /images/upload/with-stage/?stage=<estagio>
+- POST /images/upload/with-stage/
   - Auth required
   - Multipart form
-  - Field: images (repeatable)
-  - Query param: stage: "estagio1"|"estagio2"|"estagio3"|"estagio4"|"nao_classificavel"|"dtpi"
+  - Fields:
+    - images (repeatable)
+    - stage (form field): "estagio1"|"estagio2"|"estagio3"|"estagio4"|"nao_classificavel"|"dtpi"
   - Efeito: cria imagens e já registra classificação para cada uma
   - Response: 201 Created, { upload_batch_id, uploaded, stage, classified }
 
