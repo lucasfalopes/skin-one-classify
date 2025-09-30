@@ -114,8 +114,7 @@ const Upload = () => {
     try {
       const formData = new FormData();
       for (const f of validFiles) formData.append("images", f);
-      formData.append("stage", batchStage);
-      const res = await api.post(endpoints.uploadBatchWithStage(), formData);
+      const res = await api.post(endpoints.uploadBatchWithStage(batchStage), formData);
       toast({ title: "Upload + classificação concluídos", description: `${validFiles.length} imagens como ${batchStage}.` });
     } catch (error: any) {
       toast({ variant: "destructive", title: "Falha no upload/classificação", description: error?.message ?? "Tente novamente." });

@@ -132,7 +132,7 @@ export const endpoints = {
   me: () => "/auth/me/",
   upload: () => "/images/upload/",
   uploadSingle: () => "/images/upload/single/",
-  uploadBatchWithStage: () => "/images/upload/with-stage/",
+  uploadBatchWithStage: (stage: ClassifyRequest["stage"]) => `/images/upload/with-stage/?stage=${encodeURIComponent(stage)}`,
   listImages: () => "/images/",
   classify: () => "/classifications/",
   admin: {
