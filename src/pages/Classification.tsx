@@ -99,7 +99,8 @@ const Classification = () => {
     }
   };
 
-  const hasBackendImages = images.length > 0;
+  const useMocks = import.meta.env.VITE_USE_MOCKS === 'true';
+  const hasBackendImages = !useMocks && images.length > 0;
   const imageList = hasBackendImages
     ? images
     : [

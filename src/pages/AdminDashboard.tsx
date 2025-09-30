@@ -34,9 +34,26 @@ const AdminDashboard = () => {
   const [search, setSearch] = useState("");
   const [range, setRange] = useState<DateRange>({});
 
+  const useMocks = import.meta.env.VITE_USE_MOCKS === 'true';
   const { data: metrics, isLoading, refetch } = useQuery<AdminMetrics>({
     queryKey: ["admin-metrics", range.from?.toISOString(), range.to?.toISOString()],
     queryFn: async () => {
+      if (useMocks) {
+        // minimal mock for dev preview
+        return {
+          total_users: 3,
+          total_images: 120,
+          classified_images_count: 90,
+          unclassified_images_count: 30,
+          classifications_per_category: { estagio1: 40, estagio2: 25, estagio3: 15, estagio4: 5, nao_classificavel: 3, dtpi: 2 },
+          classifications_by_user: [
+            { id: '1', name: 'Dr. A', email: 'a@a.com', classification_count: 50, last_active: new Date().toISOString() },
+            { id: '2', name: 'Dr. B', email: 'b@b.com', classification_count: 25 },
+            { id: '3', name: 'Dra. C', email: 'c@c.com', classification_count: 15 },
+          ],
+          daily_classifications: Array.from({ length: 7 }).map((_, i) => ({ date: format(new Date(Date.now() - (6 - i) * 86400000), 'yyyy-MM-dd'), count: Math.floor(Math.random() * 20) + 1 })),
+        } satisfies AdminMetrics;
+      }
       const from = range.from ? format(range.from, "yyyy-MM-dd") : undefined;
       const to = range.to ? format(range.to, "yyyy-MM-dd") : undefined;
       return api.get<AdminMetrics>(endpoints.admin.metrics({ from, to }));
