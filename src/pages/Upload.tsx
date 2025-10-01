@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +15,8 @@ import { Label } from "@/components/ui/label";
 const Upload = () => {
   const [uploadedImages, setUploadedImages] = useState(0); // batch counter
   const [isUploading, setIsUploading] = useState(false);
+  const [tab, setTab] = useState<"batch" | "single" | "batchStage">("batch");
+  const [isMobile, setIsMobile] = useState(false);
 
   // Single upload + classify state
   const [singleImage, setSingleImage] = useState<UploadedImage | null>(null);
@@ -27,6 +29,17 @@ const Upload = () => {
   // Batch with stage state
   const [batchStage, setBatchStage] = useState<ClassifyRequest["stage"]>("estagio1");
   const { toast } = useToast();
+
+  useEffect(() => {
+    try {
+      const ua = navigator.userAgent || navigator.vendor || (window as any).opera || "";
+      const isMobileUA = /android|iphone|ipad|ipod|iemobile|opera mini/i.test(ua);
+      const isSmallViewport = window.matchMedia && window.matchMedia("(max-width: 768px)").matches;
+      setIsMobile(isMobileUA || isSmallViewport);
+    } catch {
+      setIsMobile(false);
+    }
+  }, []);
 
   const handleBatchUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -239,12 +252,26 @@ const Upload = () => {
           </div>
 
           {/* Upload Modes */}
-          <Tabs defaultValue="batch" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="batch">Lote (Padrão)</TabsTrigger>
-              <TabsTrigger value="single">Individual + Classificar</TabsTrigger>
-              <TabsTrigger value="batchStage">Lote com Classificação</TabsTrigger>
-            </TabsList>
+          <Tabs value={tab} onValueChange={(v) => setTab(v as any)} className="w-full">
+            {isMobile ? (
+              <TabsList className="w-full overflow-x-auto flex gap-2 p-1 rounded-lg border bg-card">
+                <TabsTrigger value="batch" className="rounded-full px-4 py-2 whitespace-nowrap data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  Lote (Padrão)
+                </TabsTrigger>
+                <TabsTrigger value="single" className="rounded-full px-4 py-2 whitespace-nowrap data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  Individual + Classificar
+                </TabsTrigger>
+                <TabsTrigger value="batchStage" className="rounded-full px-4 py-2 whitespace-nowrap data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  Lote com Classificação
+                </TabsTrigger>
+              </TabsList>
+            ) : (
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="batch">Lote (Padrão)</TabsTrigger>
+                <TabsTrigger value="single">Individual + Classificar</TabsTrigger>
+                <TabsTrigger value="batchStage">Lote com Classificação</TabsTrigger>
+              </TabsList>
+            )}
 
             {/* Batch (existing) */}
             <TabsContent value="batch" className="space-y-6">
@@ -337,9 +364,11 @@ const Upload = () => {
                         <p className="text-sm text-muted-foreground">Máximo 10MB</p>
                       </div>
                       <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                        <Button onClick={handleOpenCamera} type="button" variant="outline" className="flex-1 sm:flex-none">
-                          <Camera className="w-4 h-4 mr-2" /> Tirar foto agora
-                        </Button>
+                        {isMobile && (
+                          <Button onClick={handleOpenCamera} type="button" variant="outline" className="flex-1 sm:flex-none">
+                            <Camera className="w-4 h-4 mr-2" /> Tirar foto agora
+                          </Button>
+                        )}
                         <Button asChild variant="medical" disabled={singleUploading} className="flex-1 sm:flex-none">
                           <span>{singleUploading ? "Enviando..." : "Selecionar Arquivo"}</span>
                         </Button>
