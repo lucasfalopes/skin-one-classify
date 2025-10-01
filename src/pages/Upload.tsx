@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Upload as UploadIcon, Info, Home, Image, CheckCircle2, AlertCircle } from "lucide-react";
+import { Upload as UploadIcon, Info, Home, Image, CheckCircle2, AlertCircle, Camera } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { api, endpoints, UploadResponse, UploadSingleResponse, UploadedImage, ClassifyRequest } from "@/lib/api";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -21,6 +21,8 @@ const Upload = () => {
   const [singleStage, setSingleStage] = useState<ClassifyRequest["stage"] | "">("");
   const [singleUploading, setSingleUploading] = useState(false);
   const [classifyingSingle, setClassifyingSingle] = useState(false);
+  const [isCapturing, setIsCapturing] = useState(false);
+  const [captureUrl, setCaptureUrl] = useState<string | null>(null);
 
   // Batch with stage state
   const [batchStage, setBatchStage] = useState<ClassifyRequest["stage"]>("estagio1");
@@ -46,8 +48,13 @@ const Upload = () => {
         formData.append("images", file);
       }
       const response = await api.post<UploadResponse>(endpoints.upload(), formData);
-      setUploadedImages(prev => prev + (response?.uploaded ?? validFiles.length));
-      toast({ title: "Upload concluído", description: `${response?.uploaded ?? validFiles.length} imagens enviadas.` });
+      if (!response?.success) {
+        const message = response?.error || "Falha desconhecida no upload.";
+        toast({ variant: "destructive", title: "Falha no upload", description: message });
+        return;
+      }
+      setUploadedImages(prev => prev + validFiles.length);
+      toast({ title: "Upload concluído", description: `${validFiles.length} imagens enviadas.` });
     } catch (error: any) {
       toast({ variant: "destructive", title: "Falha no upload", description: error?.message ?? "Tente novamente." });
     } finally {
@@ -76,6 +83,20 @@ const Upload = () => {
     } finally {
       setSingleUploading(false);
       try { event.currentTarget.value = ""; } catch {}
+    }
+  };
+
+  const handleOpenCamera = async () => {
+    try {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      // @ts-expect-error capture attribute widely supported on mobile
+      input.capture = 'environment';
+      input.onchange = (e: any) => void handleSingleUpload(e as React.ChangeEvent<HTMLInputElement>);
+      input.click();
+    } catch (e) {
+      toast({ variant: 'destructive', title: 'Câmera', description: 'Não foi possível abrir a câmera.' });
     }
   };
 
@@ -114,7 +135,12 @@ const Upload = () => {
     try {
       const formData = new FormData();
       for (const f of validFiles) formData.append("images", f);
-      const res = await api.post(endpoints.uploadBatchWithStage(batchStage), formData);
+      const res = await api.post<UploadResponse>(endpoints.uploadBatchWithStage(batchStage), formData);
+      if (!res?.success) {
+        const message = res?.error || "Falha desconhecida no upload/classificação.";
+        toast({ variant: "destructive", title: "Falha no upload/classificação", description: message });
+        return;
+      }
       toast({ title: "Upload + classificação concluídos", description: `${validFiles.length} imagens como ${batchStage}.` });
     } catch (error: any) {
       toast({ variant: "destructive", title: "Falha no upload/classificação", description: error?.message ?? "Tente novamente." });
@@ -232,14 +258,16 @@ const Upload = () => {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary transition-colors">
-                    <input type="file" multiple accept="image/*" onChange={handleBatchUpload} className="hidden" id="file-upload-batch" />
+                    <input type="file" multiple accept="image/*" onChange={handleBatchUpload} className="sr-only" id="file-upload-batch" />
                     <label htmlFor="file-upload-batch" className="cursor-pointer flex flex-col items-center space-y-4">
                       <Image className="w-12 h-12 text-muted-foreground" />
                       <div className="space-y-1">
                         <p className="text-lg font-medium">Clique para selecionar imagens</p>
                         <p className="text-sm text-muted-foreground">Ou arraste e solte aqui (máx 10MB)</p>
                       </div>
-                      <Button variant="medical" disabled={isUploading}>{isUploading ? "Enviando..." : "Selecionar Arquivos"}</Button>
+                      <Button asChild variant="medical" disabled={isUploading}>
+                        <span>{isUploading ? "Enviando..." : "Selecionar Arquivos"}</span>
+                      </Button>
                     </label>
                   </div>
                   {isUploading && (
@@ -301,14 +329,21 @@ const Upload = () => {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary transition-colors">
-                    <input type="file" accept="image/*" onChange={handleSingleUpload} className="hidden" id="file-upload-single" />
+                    <input type="file" accept="image/*" onChange={handleSingleUpload} className="sr-only" id="file-upload-single" />
                     <label htmlFor="file-upload-single" className="cursor-pointer flex flex-col items-center space-y-4">
                       <Image className="w-12 h-12 text-muted-foreground" />
                       <div className="space-y-1">
                         <p className="text-lg font-medium">Clique para selecionar uma imagem</p>
                         <p className="text-sm text-muted-foreground">Máximo 10MB</p>
                       </div>
-                      <Button variant="medical" disabled={singleUploading}>{singleUploading ? "Enviando..." : "Selecionar Arquivo"}</Button>
+                      <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                        <Button onClick={handleOpenCamera} type="button" variant="outline" className="flex-1 sm:flex-none">
+                          <Camera className="w-4 h-4 mr-2" /> Tirar foto agora
+                        </Button>
+                        <Button asChild variant="medical" disabled={singleUploading} className="flex-1 sm:flex-none">
+                          <span>{singleUploading ? "Enviando..." : "Selecionar Arquivo"}</span>
+                        </Button>
+                      </div>
                     </label>
                   </div>
 
@@ -385,7 +420,7 @@ const Upload = () => {
                   <div>
                     <Label className="mb-2 block">Classificação para todas as imagens</Label>
                     <RadioGroup value={batchStage} onValueChange={(v) => setBatchStage(v as ClassifyRequest["stage"]) }>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                         <label className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted"><RadioGroupItem value="estagio1" id="b1" /><span>Estágio 1</span></label>
                         <label className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted"><RadioGroupItem value="estagio2" id="b2" /><span>Estágio 2</span></label>
                         <label className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted"><RadioGroupItem value="estagio3" id="b3" /><span>Estágio 3</span></label>
@@ -397,14 +432,21 @@ const Upload = () => {
                   </div>
 
                   <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary transition-colors">
-                    <input type="file" multiple accept="image/*" onChange={handleBatchWithStageUpload} className="hidden" id="file-upload-batch-stage" />
+                    <input type="file" multiple accept="image/*" onChange={handleBatchWithStageUpload} className="sr-only" id="file-upload-batch-stage" />
                     <label htmlFor="file-upload-batch-stage" className="cursor-pointer flex flex-col items-center space-y-4">
                       <Image className="w-12 h-12 text-muted-foreground" />
                       <div className="space-y-1">
                         <p className="text-lg font-medium">Clique para selecionar imagens</p>
                         <p className="text-sm text-muted-foreground">Todas serão marcadas como {batchStage}</p>
                       </div>
-                      <Button variant="medical" disabled={isUploading}>{isUploading ? "Enviando..." : "Selecionar Arquivos"}</Button>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full sm:w-auto">
+                        <Button asChild variant="medical" disabled={isUploading} className="w-full">
+                          <span>{isUploading ? "Enviando..." : "Selecionar Arquivos"}</span>
+                        </Button>
+                        <Button type="button" variant="outline" className="w-full" onClick={() => document.getElementById('file-upload-batch-stage')?.dispatchEvent(new MouseEvent('click', { bubbles: true }))}>
+                          Reabrir seletor
+                        </Button>
+                      </div>
                     </label>
                   </div>
                 </CardContent>

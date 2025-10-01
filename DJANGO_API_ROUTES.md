@@ -30,7 +30,7 @@ All JSON responses should use `application/json`. Use JWT or token-based auth; t
   - Auth required
   - Multipart form
   - Field: images (repeatable) -> multiple files allowed
-  - Response: 201 Created, { upload_batch_id, uploaded }
+  - Response: 201 Created, { success, error } <-----
 
 - POST /images/upload/single/
   - Auth required

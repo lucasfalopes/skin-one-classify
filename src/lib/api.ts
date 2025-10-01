@@ -94,7 +94,7 @@ export interface LoginResponse { token: string; user: { id: string; name: string
 export interface RegisterRequest { name: string; email: string; password: string; coren: string; specialty: string; institution: string }
 export interface LoginRequest { email: string; password: string }
 
-export interface UploadResponse { upload_batch_id: string; uploaded: number }
+export interface UploadResponse { success: boolean; error?: string }
 export interface UploadedImage { id: string; url: string }
 export interface UploadSingleResponse { image: UploadedImage }
 export interface UploadBatchWithStageResponse { upload_batch_id: string; uploaded: number; stage: ClassifyRequest["stage"]; classified?: number }
