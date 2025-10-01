@@ -252,59 +252,47 @@ const Classification = () => {
               </CardHeader>
               <CardContent className="space-y-6">
                 <RadioGroup value={classification} onValueChange={setClassification}>
-                  <div className="space-y-3">
-                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
-                      <RadioGroupItem value="estagio1" id="estagio1" />
-                      <Label htmlFor="estagio1" className="flex-1 cursor-pointer">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    <div className="relative">
+                      <RadioGroupItem value="estagio1" id="estagio1" className="peer sr-only" />
+                      <Label htmlFor="estagio1" className="block p-3 border rounded-lg text-center cursor-pointer select-none peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5">
                         <span className="font-medium text-success">Estágio 1</span>
-                        <span className="block text-sm text-muted-foreground">
-                          Eritema não branqueável
-                        </span>
+                        <span className="block text-xs text-muted-foreground">Eritema não branqueável</span>
                       </Label>
                     </div>
-                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
-                      <RadioGroupItem value="estagio2" id="estagio2" />
-                      <Label htmlFor="estagio2" className="flex-1 cursor-pointer">
+                    <div className="relative">
+                      <RadioGroupItem value="estagio2" id="estagio2" className="peer sr-only" />
+                      <Label htmlFor="estagio2" className="block p-3 border rounded-lg text-center cursor-pointer select-none peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5">
                         <span className="font-medium text-warning">Estágio 2</span>
-                        <span className="block text-sm text-muted-foreground">
-                          Perda parcial da pele
-                        </span>
+                        <span className="block text-xs text-muted-foreground">Perda parcial da pele</span>
                       </Label>
                     </div>
-                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
-                      <RadioGroupItem value="estagio3" id="estagio3" />
-                      <Label htmlFor="estagio3" className="flex-1 cursor-pointer">
+                    <div className="relative">
+                      <RadioGroupItem value="estagio3" id="estagio3" className="peer sr-only" />
+                      <Label htmlFor="estagio3" className="block p-3 border rounded-lg text-center cursor-pointer select-none peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5">
                         <span className="font-medium text-destructive">Estágio 3</span>
-                        <span className="block text-sm text-muted-foreground">
-                          Perda total da pele
-                        </span>
+                        <span className="block text-xs text-muted-foreground">Perda total da pele</span>
                       </Label>
                     </div>
-                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
-                      <RadioGroupItem value="estagio4" id="estagio4" />
-                      <Label htmlFor="estagio4" className="flex-1 cursor-pointer">
+                    <div className="relative">
+                      <RadioGroupItem value="estagio4" id="estagio4" className="peer sr-only" />
+                      <Label htmlFor="estagio4" className="block p-3 border rounded-lg text-center cursor-pointer select-none peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5">
                         <span className="font-medium text-destructive">Estágio 4</span>
-                        <span className="block text-sm text-muted-foreground">
-                          Exposição de músculos/ossos
-                        </span>
+                        <span className="block text-xs text-muted-foreground">Músculos/ossos expostos</span>
                       </Label>
                     </div>
-                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
-                      <RadioGroupItem value="nao_classificavel" id="nao_classificavel" />
-                      <Label htmlFor="nao_classificavel" className="flex-1 cursor-pointer">
+                    <div className="relative">
+                      <RadioGroupItem value="nao_classificavel" id="nao_classificavel" className="peer sr-only" />
+                      <Label htmlFor="nao_classificavel" className="block p-3 border rounded-lg text-center cursor-pointer select-none peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5">
                         <span className="font-medium">Não classificável</span>
-                        <span className="block text-sm text-muted-foreground">
-                          Impossível determinar o estágio no momento
-                        </span>
+                        <span className="block text-xs text-muted-foreground">Indeterminado</span>
                       </Label>
                     </div>
-                    <div className="flex items-center space-x-2 p-3 rounded-lg hover:bg-muted">
-                      <RadioGroupItem value="dtpi" id="dtpi" />
-                      <Label htmlFor="dtpi" className="flex-1 cursor-pointer">
+                    <div className="relative">
+                      <RadioGroupItem value="dtpi" id="dtpi" className="peer sr-only" />
+                      <Label htmlFor="dtpi" className="block p-3 border rounded-lg text-center cursor-pointer select-none peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5">
                         <span className="font-medium">DTPI</span>
-                        <span className="block text-sm text-muted-foreground">
-                          Lesão por pressão de tecido profundo
-                        </span>
+                        <span className="block text-xs text-muted-foreground">Tecido profundo</span>
                       </Label>
                     </div>
                   </div>
