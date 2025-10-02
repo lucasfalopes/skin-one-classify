@@ -1,6 +1,38 @@
 import { getAuthHeader } from "./auth";
 import { env } from "./env";
 
+// CSRF helpers (for Django-style CSRF protection)
+function readCookie(name: string): string | null {
+  try {
+    if (typeof document === "undefined") return null;
+    const cookies = document.cookie?.split(";") ?? [];
+    for (const c of cookies) {
+      const [rawKey, ...rest] = c.trim().split("=");
+      if (rawKey === name) {
+        return decodeURIComponent(rest.join("="));
+      }
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function getCsrfToken(): string | null {
+  // Common cookie names: Django uses 'csrftoken'; some setups use 'XSRF-TOKEN' or 'csrf_token'
+  return (
+    readCookie("csrftoken") ??
+    readCookie("XSRF-TOKEN") ??
+    readCookie("csrf_token") ??
+    null
+  );
+}
+
+function isCsrfProtectedMethod(method?: string): boolean {
+  const m = (method ?? "GET").toUpperCase();
+  return !["GET", "HEAD", "OPTIONS", "TRACE"].includes(m);
+}
+
 export interface ApiClientOptions {
   baseUrl?: string;
   fetchImpl?: typeof fetch;
@@ -45,13 +77,42 @@ export class ApiClient {
     return `${this.baseUrl}${cleanPath}`;
   }
 
+  private async ensureCsrfCookie(): Promise<void> {
+    if (typeof document === "undefined") return;
+    if (getCsrfToken()) return;
+    try {
+      // Try a lightweight endpoint likely to exist
+      await this.fetchImpl(this.buildUrl("/auth/me/"), {
+        method: "GET",
+        credentials: "include",
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+      }).catch(() => undefined);
+    } catch {}
+  }
+
   private async request<T>(path: string, init: RequestInit = {}): Promise<T> {
     const isFormData = typeof FormData !== "undefined" && init.body instanceof FormData;
+    const method = (init.method || "GET").toUpperCase();
     const headers: HeadersInit = {
       ...getAuthHeader(),
       ...(!isFormData ? { "Content-Type": "application/json" } : {}),
       ...(init.headers ?? {}),
     };
+
+    // Attempt to ensure CSRF cookie exists for unsafe methods
+    if (isCsrfProtectedMethod(method) && typeof document !== "undefined" && !getCsrfToken()) {
+      await this.ensureCsrfCookie();
+    }
+
+    // Add CSRF header for unsafe methods when a CSRF cookie is present
+    if (isCsrfProtectedMethod(method)) {
+      const csrfToken = getCsrfToken();
+      if (csrfToken) {
+        (headers as Record<string, string>)["X-CSRFToken"] = csrfToken;
+      }
+      // Helps some backends distinguish AJAX requests
+      (headers as Record<string, string>)["X-Requested-With"] = "XMLHttpRequest";
+    }
 
     if (import.meta.env.DEV) {
       try {
@@ -66,7 +127,12 @@ export class ApiClient {
     }
 
     const response = await withTimeout(
-      this.fetchImpl(this.buildUrl(path), { ...init, headers })
+      this.fetchImpl(this.buildUrl(path), {
+        // Always include credentials so CSRF/session cookies are sent/received
+        credentials: "include",
+        ...init,
+        headers,
+      })
     );
 
     const contentType = response.headers.get("content-type") ?? "";
