@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -12,13 +12,14 @@ import { Home, Info, LogOut, Eye, User, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { api, endpoints, ClassifyRequest, ClassifyResponse } from "@/lib/api";
 import { clearAuthToken } from "@/lib/auth";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { listImages } from "@/lib/images";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const Classification = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const location = useLocation();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [classification, setClassification] = useState("");
   const [observationsEnabled, setObservationsEnabled] = useState(false);
@@ -26,10 +27,38 @@ const Classification = () => {
   const [showFeedbackForm, setShowFeedbackForm] = useState(false);
   const [isFirstClassification, setIsFirstClassification] = useState(true);
 
-  const { data: images = [], isLoading: isLoadingImages, isError: isImagesError } = useQuery({
-    queryKey: ["images"],
-    queryFn: listImages,
-  });
+  const queryClient = useQueryClient();
+  const [backendImages, setBackendImages] = useState<Array<{ id: string; url: string }>>([]);
+  const [loadingBackendImages, setLoadingBackendImages] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  const fetchBackendImages = async (): Promise<Array<{ id: string; url: string }>> => {
+    const rawUser = localStorage.getItem("skinone-user");
+    const user = rawUser ? JSON.parse(rawUser) : null;
+    const search = new URLSearchParams(location.search);
+    const batchId = search.get("id");
+    const userId = batchId ?? user?.id ?? user?.pk ?? user?.uuid ?? user?.email ?? "unknown";
+    // header must include user id
+    const headers: Record<string, string> = { "X-User-ID": String(userId) };
+    return api.getWithHeaders<Array<{ id: string; url: string }>>(endpoints.classificationImages(String(userId)), headers);
+  };
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      setLoadingBackendImages(true);
+      setFetchError(null);
+      try {
+        const items = await fetchBackendImages();
+        if (mounted) setBackendImages(items ?? []);
+      } catch (e: any) {
+        if (mounted) setFetchError(e?.message ?? "Falha ao carregar imagens para classificação");
+      } finally {
+        if (mounted) setLoadingBackendImages(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
 
   useEffect(() => {
     // Verificar se usuário está logado, respeitando bypass em dev
@@ -61,7 +90,7 @@ const Classification = () => {
       return;
     }
 
-    if (images.length === 0) {
+    if (imageList.length === 0) {
       // Demo mode: sem backend, apenas simula sucesso
       toast({ title: "Classificação salva (demo)", description: `Imagem classificada como: ${classification}${observationsEnabled && observations ? ` • Obs: ${observations}` : ""}` });
     } else {
@@ -72,7 +101,12 @@ const Classification = () => {
           stage: classification as ClassifyRequest["stage"],
           observations: observationsEnabled && observations ? observations : undefined,
         };
-        const _response = await api.post<ClassifyResponse>(endpoints.classify(), payload);
+        // enviar header com id do usuário
+        const rawUser = localStorage.getItem("skinone-user");
+        const user = rawUser ? JSON.parse(rawUser) : null;
+        const userId = user?.id ?? user?.pk ?? user?.uuid ?? user?.email ?? "unknown";
+        const headers: Record<string, string> = { "X-User-ID": String(userId) };
+        const _response = await api.postWithHeaders<ClassifyResponse>(endpoints.classify(), payload, headers);
         toast({ title: "Classificação salva!", description: `Imagem classificada como: ${classification}` });
       } catch (error: any) {
         toast({ variant: "destructive", title: "Falha ao salvar", description: error?.message ?? "Tente novamente." });
@@ -100,9 +134,9 @@ const Classification = () => {
   };
 
   const useMocks = import.meta.env.VITE_USE_MOCKS === 'true';
-  const hasBackendImages = !useMocks && images.length > 0;
+  const hasBackendImages = !useMocks && backendImages.length > 0;
   const imageList = hasBackendImages
-    ? images
+    ? backendImages
     : [
         { id: "sample-1", url: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=400&h=400&fit=crop", patient: "Paciente A" },
         { id: "sample-2", url: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?w=400&h=400&fit=crop", patient: "Paciente B" },
@@ -220,7 +254,7 @@ const Classification = () => {
                 <CardDescription>{currentImage.patient}</CardDescription>
               </CardHeader>
               <CardContent>
-                {isLoadingImages ? (
+                {loadingBackendImages ? (
                   <div className="aspect-square bg-muted rounded-lg overflow-hidden">
                     <Skeleton className="w-full h-full" />
                   </div>
@@ -254,35 +288,35 @@ const Classification = () => {
                 <RadioGroup value={classification} onValueChange={setClassification}>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                     <div className="relative">
-                      <RadioGroupItem value="estagio1" id="estagio1" className="peer sr-only" />
+                      <RadioGroupItem value="stage1" id="estagio1" className="peer sr-only" />
                       <Label htmlFor="estagio1" className="block p-3 border rounded-lg text-center cursor-pointer select-none peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5">
                         <span className="font-medium text-success">Estágio 1</span>
                         <span className="block text-xs text-muted-foreground">Eritema não branqueável</span>
                       </Label>
                     </div>
                     <div className="relative">
-                      <RadioGroupItem value="estagio2" id="estagio2" className="peer sr-only" />
+                      <RadioGroupItem value="stage2" id="estagio2" className="peer sr-only" />
                       <Label htmlFor="estagio2" className="block p-3 border rounded-lg text-center cursor-pointer select-none peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5">
                         <span className="font-medium text-warning">Estágio 2</span>
                         <span className="block text-xs text-muted-foreground">Perda parcial da pele</span>
                       </Label>
                     </div>
                     <div className="relative">
-                      <RadioGroupItem value="estagio3" id="estagio3" className="peer sr-only" />
+                      <RadioGroupItem value="stage3" id="estagio3" className="peer sr-only" />
                       <Label htmlFor="estagio3" className="block p-3 border rounded-lg text-center cursor-pointer select-none peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5">
                         <span className="font-medium text-destructive">Estágio 3</span>
                         <span className="block text-xs text-muted-foreground">Perda total da pele</span>
                       </Label>
                     </div>
                     <div className="relative">
-                      <RadioGroupItem value="estagio4" id="estagio4" className="peer sr-only" />
+                      <RadioGroupItem value="stage4" id="estagio4" className="peer sr-only" />
                       <Label htmlFor="estagio4" className="block p-3 border rounded-lg text-center cursor-pointer select-none peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5">
                         <span className="font-medium text-destructive">Estágio 4</span>
                         <span className="block text-xs text-muted-foreground">Músculos/ossos expostos</span>
                       </Label>
                     </div>
                     <div className="relative">
-                      <RadioGroupItem value="nao_classificavel" id="nao_classificavel" className="peer sr-only" />
+                      <RadioGroupItem value="not_classifiable" id="nao_classificavel" className="peer sr-only" />
                       <Label htmlFor="nao_classificavel" className="block p-3 border rounded-lg text-center cursor-pointer select-none peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/5">
                         <span className="font-medium">Não classificável</span>
                         <span className="block text-xs text-muted-foreground">Indeterminado</span>
@@ -322,7 +356,7 @@ const Classification = () => {
                   size="lg" 
                   className="w-full"
                   onClick={handleClassification}
-                  disabled={isLoadingImages}
+                  disabled={loadingBackendImages}
                 >
                   Confirmar Classificação
                 </Button>

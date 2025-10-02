@@ -105,20 +105,18 @@ export class ApiClient {
       ...(init.headers ?? {}),
     };
 
-    // CSRF handling only when using cookie-based auth/credentials
-    if (env.API_WITH_CREDENTIALS) {
-      // Attempt to ensure CSRF cookie exists for unsafe methods
-      if (isCsrfProtectedMethod(method) && typeof document !== "undefined" && !getCsrfToken()) {
-        await this.ensureCsrfCookie();
+    // CSRF handling: always attach header for unsafe methods when a CSRF cookie exists
+    // This supports Django-style CSRF regardless of whether we use cookie auth or JWT.
+    // For cross-origin cookie flows, also set VITE_API_WITH_CREDENTIALS=true so cookies are sent.
+    if (isCsrfProtectedMethod(method) && typeof document !== "undefined" && !getCsrfToken()) {
+      await this.ensureCsrfCookie();
+    }
+    if (isCsrfProtectedMethod(method)) {
+      const csrfToken = getCsrfToken();
+      if (csrfToken) {
+        (headers as Record<string, string>)["X-CSRFToken"] = csrfToken;
       }
-      // Add CSRF header for unsafe methods when a CSRF cookie is present
-      if (isCsrfProtectedMethod(method)) {
-        const csrfToken = getCsrfToken();
-        if (csrfToken) {
-          (headers as Record<string, string>)["X-CSRFToken"] = csrfToken;
-        }
-        (headers as Record<string, string>)["X-Requested-With"] = "XMLHttpRequest";
-      }
+      (headers as Record<string, string>)["X-Requested-With"] = "XMLHttpRequest";
     }
 
     if (import.meta.env.DEV) {
@@ -170,9 +168,18 @@ export class ApiClient {
     return this.request<T>(path, { method: "GET" });
   }
 
+  getWithHeaders<T>(path: string, headers: HeadersInit): Promise<T> {
+    return this.request<T>(path, { method: "GET", headers });
+  }
+
   post<T>(path: string, data?: unknown): Promise<T> {
     const body = data instanceof FormData ? data : JSON.stringify(data ?? {});
     return this.request<T>(path, { method: "POST", body });
+  }
+
+  postWithHeaders<T>(path: string, data: unknown, headers: HeadersInit): Promise<T> {
+    const body = data instanceof FormData ? data : JSON.stringify(data ?? {});
+    return this.request<T>(path, { method: "POST", body, headers });
   }
 
   put<T>(path: string, data?: unknown): Promise<T> {
@@ -198,7 +205,7 @@ export interface UploadSingleResponse { image: UploadedImage }
 export interface UploadBatchWithStageResponse { upload_batch_id: string; uploaded: number; stage: ClassifyRequest["stage"]; classified?: number }
 export interface ClassifyRequest {
   image_id: string;
-  stage: "estagio1" | "estagio2" | "estagio3" | "estagio4" | "nao_classificavel" | "dtpi";
+  stage: "stage1" | "stage2" | "stage3" | "stage4" | "not_classifiable" | "dtpi";
   observations?: string;
 }
 export interface ClassifyResponse { id: string; image_id: string; stage: string; created_at: string }
@@ -232,6 +239,7 @@ export const endpoints = {
   uploadSingle: () => "/images/upload/single/",
   uploadBatchWithStage: (stage: ClassifyRequest["stage"]) => `/images/upload/with-stage/?stage=${encodeURIComponent(stage)}`,
   listImages: () => "/images/",
+    classificationImages: (id: string) => `/classifications/classification_images/?id=${encodeURIComponent(id)}`,
   classify: () => "/classifications/",
   admin: {
     metrics: (params?: { from?: string; to?: string }) => {

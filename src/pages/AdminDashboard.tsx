@@ -45,7 +45,7 @@ const AdminDashboard = () => {
           total_images: 120,
           classified_images_count: 90,
           unclassified_images_count: 30,
-          classifications_per_category: { estagio1: 40, estagio2: 25, estagio3: 15, estagio4: 5, nao_classificavel: 3, dtpi: 2 },
+          classifications_per_category: { stage1: 40, stage2: 25, stage3: 15, stage4: 5, not_classifiable: 3, dtpi: 2 },
           classifications_by_user: [
             { id: '1', name: 'Dr. A', email: 'a@a.com', classification_count: 50, last_active: new Date().toISOString() },
             { id: '2', name: 'Dr. B', email: 'b@b.com', classification_count: 25 },

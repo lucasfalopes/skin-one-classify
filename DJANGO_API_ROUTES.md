@@ -22,9 +22,13 @@ All JSON responses should use `application/json`. Use JWT or token-based auth; t
 
 ## Images
 
+- GET /image/
+  - Auth required
+  - Response: 200 OK, { id, url}
+
 - GET /images/
   - Auth required
-  - Response: 200 OK, [ { id, url, patient? } ]
+  - Response: 200 OK, [ { id, url} ]
 
 - POST /images/upload/
   - Auth required
@@ -38,19 +42,25 @@ All JSON responses should use `application/json`. Use JWT or token-based auth; t
   - Field: image
   - Response: 201 Created, { image: { id, url } }
 
-- POST /images/upload/with-stage/?stage=<estagio>
+- POST /images/upload/with-stage/?stage=<stage>
   - Auth required
   - Multipart form
   - Field: images (repeatable)
-  - Query param: stage: "estagio1"|"estagio2"|"estagio3"|"estagio4"|"nao_classificavel"|"dtpi"
+  - Query param: stage: "stage1"|"stage2"|"stage3"|"stage4"|"not_classifiable"|"dtpi"
   - Efeito: cria imagens e já registra classificação para cada uma
   - Response: 201 Created, { upload_batch_id, uploaded, stage, classified }
+
+- GET /classifications/classification_images/?id=<id>
+  - Auth required
+  - Headers: X-User-ID: <id>
+  - Response: 200 OK, [ { id, url } ]  
+    - Observação: a ordem é cronológica de chegada
 
 ## Classifications
 
 - POST /classifications/
   - Auth required
-  - Request: { image_id: string, stage: "estagio1"|"estagio2"|"estagio3"|"estagio4"|"nao_classificavel"|"dtpi", observations?: string }
+  - Request: { image_id: string, stage: "stage1"|"stage2"|"stage3"|"stage4"|"not_classifiable"|"dtpi", observations?: string }
   - Response: 201 Created, { id, image_id, stage, created_at }
 
 - GET /classifications/?image_id=<id>

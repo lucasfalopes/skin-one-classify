@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -7,7 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Upload as UploadIcon, Info, Home, Image, CheckCircle2, AlertCircle, Camera } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { api, endpoints, UploadResponse, UploadSingleResponse, UploadedImage, ClassifyRequest } from "@/lib/api";
+import { api, endpoints, UploadResponse, UploadSingleResponse, UploadedImage, ClassifyRequest, UploadBatchWithStageResponse } from "@/lib/api";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -17,6 +17,7 @@ const Upload = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [tab, setTab] = useState<"batch" | "single" | "batchStage">("batch");
   const [isMobile, setIsMobile] = useState(false);
+  const navigate = useNavigate();
 
   // Single upload + classify state
   const [singleImage, setSingleImage] = useState<UploadedImage | null>(null);
@@ -27,7 +28,7 @@ const Upload = () => {
   const [captureUrl, setCaptureUrl] = useState<string | null>(null);
 
   // Batch with stage state
-  const [batchStage, setBatchStage] = useState<ClassifyRequest["stage"]>("estagio1");
+  const [batchStage, setBatchStage] = useState<ClassifyRequest["stage"]>("stage1");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -148,13 +149,14 @@ const Upload = () => {
     try {
       const formData = new FormData();
       for (const f of validFiles) formData.append("images", f);
-      const res = await api.post<UploadResponse>(endpoints.uploadBatchWithStage(batchStage), formData);
-      if (!res?.success) {
-        const message = res?.error || "Falha desconhecida no upload/classificação.";
-        toast({ variant: "destructive", title: "Falha no upload/classificação", description: message });
+      const res = await api.post<UploadBatchWithStageResponse>(endpoints.uploadBatchWithStage(batchStage), formData);
+      if (!res?.upload_batch_id) {
+        toast({ variant: "destructive", title: "Falha no upload/classificação", description: "Resposta do servidor incompleta." });
         return;
       }
-      toast({ title: "Upload + classificação concluídos", description: `${validFiles.length} imagens como ${batchStage}.` });
+      toast({ title: "Upload + classificação iniciados", description: `${validFiles.length} imagens como ${batchStage}.` });
+      // Redireciona para a tela de classificação com o id do pacote
+      navigate(`/classification?id=${encodeURIComponent(res.upload_batch_id)}`);
     } catch (error: any) {
       toast({ variant: "destructive", title: "Falha no upload/classificação", description: error?.message ?? "Tente novamente." });
     } finally {
@@ -399,23 +401,23 @@ const Upload = () => {
                           <RadioGroup value={singleStage} onValueChange={(v) => setSingleStage(v as ClassifyRequest["stage"]) }>
                             <div className="space-y-2">
                               <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-muted">
-                                <RadioGroupItem value="estagio1" id="s1" />
+                                <RadioGroupItem value="stage1" id="s1" />
                                 <Label htmlFor="s1" className="flex-1 cursor-pointer">Estágio 1</Label>
                               </div>
                               <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-muted">
-                                <RadioGroupItem value="estagio2" id="s2" />
+                                <RadioGroupItem value="stage2" id="s2" />
                                 <Label htmlFor="s2" className="flex-1 cursor-pointer">Estágio 2</Label>
                               </div>
                               <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-muted">
-                                <RadioGroupItem value="estagio3" id="s3" />
+                                <RadioGroupItem value="stage3" id="s3" />
                                 <Label htmlFor="s3" className="flex-1 cursor-pointer">Estágio 3</Label>
                               </div>
                               <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-muted">
-                                <RadioGroupItem value="estagio4" id="s4" />
+                                <RadioGroupItem value="stage4" id="s4" />
                                 <Label htmlFor="s4" className="flex-1 cursor-pointer">Estágio 4</Label>
                               </div>
                               <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-muted">
-                                <RadioGroupItem value="nao_classificavel" id="snc" />
+                                <RadioGroupItem value="not_classifiable" id="snc" />
                                 <Label htmlFor="snc" className="flex-1 cursor-pointer">Não classificável</Label>
                               </div>
                               <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-muted">
@@ -450,11 +452,11 @@ const Upload = () => {
                     <Label className="mb-2 block">Classificação para todas as imagens</Label>
                     <RadioGroup value={batchStage} onValueChange={(v) => setBatchStage(v as ClassifyRequest["stage"]) }>
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                        <label className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted"><RadioGroupItem value="estagio1" id="b1" /><span>Estágio 1</span></label>
-                        <label className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted"><RadioGroupItem value="estagio2" id="b2" /><span>Estágio 2</span></label>
-                        <label className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted"><RadioGroupItem value="estagio3" id="b3" /><span>Estágio 3</span></label>
-                        <label className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted"><RadioGroupItem value="estagio4" id="b4" /><span>Estágio 4</span></label>
-                        <label className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted"><RadioGroupItem value="nao_classificavel" id="bnc" /><span>Não classificável</span></label>
+                        <label className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted"><RadioGroupItem value="stage1" id="b1" /><span>Estágio 1</span></label>
+                        <label className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted"><RadioGroupItem value="stage2" id="b2" /><span>Estágio 2</span></label>
+                        <label className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted"><RadioGroupItem value="stage3" id="b3" /><span>Estágio 3</span></label>
+                        <label className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted"><RadioGroupItem value="stage4" id="b4" /><span>Estágio 4</span></label>
+                        <label className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted"><RadioGroupItem value="not_classifiable" id="bnc" /><span>Não classificável</span></label>
                         <label className="flex items-center gap-2 p-2 rounded-lg hover:bg-muted"><RadioGroupItem value="dtpi" id="bdtpi" /><span>DTPI</span></label>
                       </div>
                     </RadioGroup>

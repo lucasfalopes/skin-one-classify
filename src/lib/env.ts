@@ -11,6 +11,7 @@ const inferredDefaultBaseUrl = (() => {
 
 export const env = {
   API_BASE_URL: inferredDefaultBaseUrl.replace(/\/$/, ""),
+  // Send cookies on requests when true. Needed if backend sets CSRF cookie cross-site.
   API_WITH_CREDENTIALS: String(import.meta.env.VITE_API_WITH_CREDENTIALS || "false").toLowerCase() === "true",
 };
 
