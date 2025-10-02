@@ -1,5 +1,16 @@
+const inferredDefaultBaseUrl = (() => {
+  // Prefer explicit env
+  const fromEnv = import.meta.env.VITE_API_BASE_URL as string | undefined;
+  if (fromEnv && typeof fromEnv === "string" && fromEnv.trim() !== "") return fromEnv;
+  // In dev, default to Vite proxy path to avoid CORS
+  if (import.meta.env.DEV) return "/api";
+  // In prod, fallback to same-origin API
+  if (typeof window !== "undefined" && window.location?.origin) return window.location.origin;
+  return "";
+})();
+
 export const env = {
-  API_BASE_URL: (import.meta.env.VITE_API_BASE_URL || "http://localhost:8000").replace(/\/$/, ""),
+  API_BASE_URL: inferredDefaultBaseUrl.replace(/\/$/, ""),
 };
 
 export function assertEnv(): void {
