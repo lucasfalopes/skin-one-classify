@@ -81,12 +81,18 @@ export class ApiClient {
     if (typeof document === "undefined") return;
     if (getCsrfToken()) return;
     try {
-      // Try a lightweight endpoint likely to exist
-      await this.fetchImpl(this.buildUrl("/auth/me/"), {
-        method: "GET",
-        credentials: "include",
-        headers: { "X-Requested-With": "XMLHttpRequest" },
-      }).catch(() => undefined);
+      // Prefer a dedicated CSRF endpoint if available
+      const tryUrls = ["/auth/csrf/", "/auth/me/"];
+      for (const p of tryUrls) {
+        try {
+          await this.fetchImpl(this.buildUrl(p), {
+            method: "GET",
+            credentials: "include",
+            headers: { "X-Requested-With": "XMLHttpRequest" },
+          });
+          if (getCsrfToken()) break;
+        } catch {}
+      }
     } catch {}
   }
 
