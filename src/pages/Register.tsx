@@ -37,7 +37,7 @@ const Register = () => {
         specialty: "enfermagem",
       };
       console.log(payload);
-      try { console.log("[DEBUG] /auth/register payload:", { ...payload, password: "***" }); } catch {}
+      try { console.info("[DEBUG] /auth/register payload:", { ...payload, password: "***" }); } catch {}
       await api.post(endpoints.register(), payload);
       toast({
         title: "Cadastro realizado com sucesso!",
@@ -61,15 +61,15 @@ const Register = () => {
       const formData = new FormData(event.currentTarget);
       const email = String(formData.get("login-email"));
       const password = String(formData.get("login-password"));
-      try { console.log("[DEBUG] /auth/login payload:", { email, password: "***" }); } catch {}
+      try { console.info("[DEBUG] /auth/login payload:", { email, password: "***" }); } catch {}
       const response = await api.post<LoginResponse>(endpoints.login(), { email, password });
       setAuthToken(response.token);
       try { localStorage.setItem("skinone-user", JSON.stringify(response.user)); } catch {}
       toast({
         title: "Login realizado com sucesso!",
-        description: "Redirecionando para a área de classificação...",
+        description: "Redirecionando para a página inicial...",
       });
-      navigate("/classification");
+      navigate("/");
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -87,7 +87,7 @@ const Register = () => {
       setAuthToken(response.token);
       try { localStorage.setItem("skinone-user", JSON.stringify(response.user)); } catch {}
       toast({ title: "Login com Google realizado!", description: "Redirecionando..." });
-      navigate("/classification");
+      navigate("/");
     } catch (error: any) {
       toast({ variant: "destructive", title: "Falha no Google Login", description: error?.message ?? "Tente novamente." });
     }

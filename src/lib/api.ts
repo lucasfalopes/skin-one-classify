@@ -1,4 +1,5 @@
 import { getAuthHeader } from "./auth";
+import { env } from "./env";
 
 export interface ApiClientOptions {
   baseUrl?: string;
@@ -33,7 +34,7 @@ export class ApiClient {
   private fetchImpl: typeof fetch;
 
   constructor(options: ApiClientOptions = {}) {
-    this.baseUrl = (options.baseUrl ?? import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
+    this.baseUrl = (options.baseUrl ?? import.meta.env.VITE_API_BASE_URL ?? env.API_BASE_URL ?? "").replace(/\/$/, "");
     const rawFetch = (options.fetchImpl ?? (globalThis as any).fetch) as typeof fetch;
     // Bind to globalThis to avoid "Illegal invocation" in some browsers when called as a method
     this.fetchImpl = rawFetch.bind(globalThis) as typeof fetch;
@@ -52,6 +53,18 @@ export class ApiClient {
       ...(init.headers ?? {}),
     };
 
+    if (import.meta.env.DEV) {
+      try {
+        const isJsonBody = !isFormData && init.body && typeof init.body === "string";
+        const parsed = isJsonBody ? JSON.parse(init.body as string) : undefined;
+        const safe = parsed && typeof parsed === "object" && parsed !== null && "password" in parsed
+          ? { ...(parsed as any), password: "***" }
+          : parsed;
+        // eslint-disable-next-line no-console
+        console.log("[DEBUG] request", { url: this.buildUrl(path), method: init.method || "GET", body: safe });
+      } catch {}
+    }
+
     const response = await withTimeout(
       this.fetchImpl(this.buildUrl(path), { ...init, headers })
     );
@@ -61,6 +74,15 @@ export class ApiClient {
     const body = isJson ? await response.json().catch(() => null) : await response.text();
 
     if (!response.ok) {
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.log("[DEBUG] response-error", {
+          url: this.buildUrl(path),
+          method: init.method || "GET",
+          status: response.status,
+          body,
+        });
+      }
       throw new ApiError(
         (isJson && body && (body.message || body.detail)) || response.statusText || "Request failed",
         response.status,
@@ -81,7 +103,8 @@ export class ApiClient {
   }
 
   put<T>(path: string, data?: unknown): Promise<T> {
-    return this.request<T>(path, { method: "PUT", body: JSON.stringify(data) });
+    const body = data instanceof FormData ? data : JSON.stringify(data ?? {});
+    return this.request<T>(path, { method: "PUT", body });
   }
 
   delete<T>(path: string): Promise<T> {

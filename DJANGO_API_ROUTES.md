@@ -7,7 +7,7 @@ All JSON responses should use `application/json`. Use JWT or token-based auth; t
 ## Auth
 
 - POST /auth/register/
-  - Request: { name, email, password, coren, specialty, institution }
+  - Request: { name, email, password, coren, specialty }
   - Response: 201 Created, { id, name, email }
 
 - POST /auth/login/

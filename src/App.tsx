@@ -10,6 +10,7 @@ import Classification from "./pages/Classification";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminDashboard from "./pages/AdminDashboard";
+import Professional from "./pages/Professional";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +30,14 @@ const App = () => (
                 <Upload />
               </ProtectedRoute>
             } 
+          />
+          <Route
+            path="/professional"
+            element={
+              <ProtectedRoute>
+                <Professional />
+              </ProtectedRoute>
+            }
           />
           <Route 
             path="/classification" 

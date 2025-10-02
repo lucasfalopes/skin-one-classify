@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,10 +18,13 @@ import {
 import heroImage from "@/assets/hero-medical.jpg";
 import UserMenu from "@/components/UserMenu";
 import { assertEnv } from "@/lib/env";
+import { getAuthToken, clearAuthToken } from "@/lib/auth";
 
 assertEnv();
 
 const Index = () => {
+  const navigate = useNavigate();
+  const isLoggedIn = !!getAuthToken();
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -36,17 +39,28 @@ const Index = () => {
                 Skin One
               </span>
             </div>
-            <nav className="hidden md:flex items-center space-x-6">
-              <Link to="/register" className="text-muted-foreground hover:text-foreground transition-colors">
+            <nav className="hidden md:flex items-center space-x-2 sm:space-x-4">
+              <Link to="/professional" className="text-muted-foreground hover:text-foreground transition-colors">
                 Área Profissional
               </Link>
               <UserMenu />
-              <Link to="/register">
-                <Button variant="medical" size="sm">
-                  <Stethoscope className="w-4 h-4 mr-2" />
-                  Entrar
-                </Button>
-              </Link>
+              {isLoggedIn ? (
+                <>
+                  <Button variant="outline" size="sm" onClick={() => navigate('/upload')}>
+                    <Upload className="w-4 h-4 mr-2" /> Upload
+                  </Button>
+                  <Button variant="secondary" size="sm" onClick={() => navigate('/classification')}>
+                    <BarChart3 className="w-4 h-4 mr-2" /> Classificação
+                  </Button>
+                </>
+              ) : (
+                <Link to="/register">
+                  <Button variant="medical" size="sm">
+                    <Stethoscope className="w-4 h-4 mr-2" />
+                    Entrar
+                  </Button>
+                </Link>
+              )}
             </nav>
           </div>
         </div>
