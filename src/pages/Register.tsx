@@ -36,6 +36,8 @@ const Register = () => {
         coren: String(formData.get("coren")),
         specialty: "enfermagem",
       };
+      console.log(payload);
+      try { console.log("[DEBUG] /auth/register payload:", { ...payload, password: "***" }); } catch {}
       await api.post(endpoints.register(), payload);
       toast({
         title: "Cadastro realizado com sucesso!",
@@ -59,6 +61,7 @@ const Register = () => {
       const formData = new FormData(event.currentTarget);
       const email = String(formData.get("login-email"));
       const password = String(formData.get("login-password"));
+      try { console.log("[DEBUG] /auth/login payload:", { email, password: "***" }); } catch {}
       const response = await api.post<LoginResponse>(endpoints.login(), { email, password });
       setAuthToken(response.token);
       try { localStorage.setItem("skinone-user", JSON.stringify(response.user)); } catch {}
