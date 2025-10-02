@@ -43,16 +43,8 @@ const Index = () => {
               <Link to="/professional" className="text-muted-foreground hover:text-foreground transition-colors">
                 Área Profissional
               </Link>
-              <UserMenu />
               {isLoggedIn ? (
-                <>
-                  <Button variant="outline" size="sm" onClick={() => navigate('/upload')}>
-                    <Upload className="w-4 h-4 mr-2" /> Upload
-                  </Button>
-                  <Button variant="secondary" size="sm" onClick={() => navigate('/classification')}>
-                    <BarChart3 className="w-4 h-4 mr-2" /> Classificação
-                  </Button>
-                </>
+                <UserMenu />
               ) : (
                 <Link to="/register">
                   <Button variant="medical" size="sm">

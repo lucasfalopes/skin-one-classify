@@ -57,7 +57,7 @@ const Professional = () => {
                 </CardHeader>
                 <CardContent className="flex justify-center">
                   <Link to="/classification">
-                    <Button variant="secondary">Ir para Classificação</Button>
+                    <Button variant="medical">Ir para Classificação</Button>
                   </Link>
                 </CardContent>
               </Card>
