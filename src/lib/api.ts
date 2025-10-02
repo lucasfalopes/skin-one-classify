@@ -34,7 +34,9 @@ export class ApiClient {
 
   constructor(options: ApiClientOptions = {}) {
     this.baseUrl = (options.baseUrl ?? import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
-    this.fetchImpl = options.fetchImpl ?? fetch;
+    const rawFetch = (options.fetchImpl ?? (globalThis as any).fetch) as typeof fetch;
+    // Bind to globalThis to avoid "Illegal invocation" in some browsers when called as a method
+    this.fetchImpl = rawFetch.bind(globalThis) as typeof fetch;
   }
 
   private buildUrl(path: string): string {
