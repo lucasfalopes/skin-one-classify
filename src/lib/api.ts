@@ -105,19 +105,20 @@ export class ApiClient {
       ...(init.headers ?? {}),
     };
 
-    // Attempt to ensure CSRF cookie exists for unsafe methods
-    if (isCsrfProtectedMethod(method) && typeof document !== "undefined" && !getCsrfToken()) {
-      await this.ensureCsrfCookie();
-    }
-
-    // Add CSRF header for unsafe methods when a CSRF cookie is present
-    if (isCsrfProtectedMethod(method)) {
-      const csrfToken = getCsrfToken();
-      if (csrfToken) {
-        (headers as Record<string, string>)["X-CSRFToken"] = csrfToken;
+    // CSRF handling only when using cookie-based auth/credentials
+    if (env.API_WITH_CREDENTIALS) {
+      // Attempt to ensure CSRF cookie exists for unsafe methods
+      if (isCsrfProtectedMethod(method) && typeof document !== "undefined" && !getCsrfToken()) {
+        await this.ensureCsrfCookie();
       }
-      // Helps some backends distinguish AJAX requests
-      (headers as Record<string, string>)["X-Requested-With"] = "XMLHttpRequest";
+      // Add CSRF header for unsafe methods when a CSRF cookie is present
+      if (isCsrfProtectedMethod(method)) {
+        const csrfToken = getCsrfToken();
+        if (csrfToken) {
+          (headers as Record<string, string>)["X-CSRFToken"] = csrfToken;
+        }
+        (headers as Record<string, string>)["X-Requested-With"] = "XMLHttpRequest";
+      }
     }
 
     if (import.meta.env.DEV) {
@@ -132,10 +133,10 @@ export class ApiClient {
       } catch {}
     }
 
+    const useCreds = env.API_WITH_CREDENTIALS;
     const response = await withTimeout(
       this.fetchImpl(this.buildUrl(path), {
-        // Always include credentials so CSRF/session cookies are sent/received
-        credentials: "include",
+        credentials: useCreds ? "include" : undefined,
         ...init,
         headers,
       })

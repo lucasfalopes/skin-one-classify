@@ -11,6 +11,7 @@ const inferredDefaultBaseUrl = (() => {
 
 export const env = {
   API_BASE_URL: inferredDefaultBaseUrl.replace(/\/$/, ""),
+  API_WITH_CREDENTIALS: String(import.meta.env.VITE_API_WITH_CREDENTIALS || "false").toLowerCase() === "true",
 };
 
 export function assertEnv(): void {
