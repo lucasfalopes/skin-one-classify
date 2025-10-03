@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Upload as UploadIcon, Info, Home, Image, CheckCircle2, AlertCircle, Camera } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { api, endpoints, UploadResponse, UploadSingleResponse, UploadedImage, ClassifyRequest, UploadBatchWithStageResponse } from "@/lib/api";
+import { env } from "@/lib/env";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -41,6 +42,15 @@ const Upload = () => {
       setIsMobile(false);
     }
   }, []);
+
+  // Cleanup object URL when it changes or on unmount
+  useEffect(() => {
+    return () => {
+      if (captureUrl) {
+        try { URL.revokeObjectURL(captureUrl); } catch {}
+      }
+    };
+  }, [captureUrl]);
 
   const handleBatchUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -85,18 +95,26 @@ const Upload = () => {
       toast({ variant: "destructive", title: "Arquivo muito grande", description: `${file.name} excede 10MB.` });
       return;
     }
+    // Create local preview immediately
+    try {
+      const url = URL.createObjectURL(file);
+      setCaptureUrl(url);
+      setIsCapturing(true);
+    } catch {}
     setSingleUploading(true);
     try {
       const formData = new FormData();
       formData.append("image", file);
       const response = await api.post<UploadSingleResponse>(endpoints.uploadSingle(), formData);
       setSingleImage(response.image);
+      // Manter captureUrl temporariamente para garantir prévia até termos URL do backend válida
       toast({ title: "Upload concluído", description: `Imagem enviada. Selecione uma classificação.` });
     } catch (error: any) {
       toast({ variant: "destructive", title: "Falha no upload", description: error?.message ?? "Tente novamente." });
     } finally {
       setSingleUploading(false);
       try { event.currentTarget.value = ""; } catch {}
+      setIsCapturing(false);
     }
   };
 
@@ -108,9 +126,28 @@ const Upload = () => {
       // @ts-expect-error capture attribute widely supported on mobile
       input.capture = 'environment';
       input.onchange = (e: any) => void handleSingleUpload(e as React.ChangeEvent<HTMLInputElement>);
+      // Em alguns navegadores móveis (iOS), o input precisa estar no DOM
+      document.body.appendChild(input);
       input.click();
+      setTimeout(() => {
+        try { document.body.removeChild(input); } catch {}
+      }, 0);
     } catch (e) {
       toast({ variant: 'destructive', title: 'Câmera', description: 'Não foi possível abrir a câmera.' });
+    }
+  };
+
+  const handleRetakePhoto = async () => {
+    try {
+      if (captureUrl) {
+        try { URL.revokeObjectURL(captureUrl); } catch {}
+      }
+    } finally {
+      setCaptureUrl(null);
+      setSingleImage(null);
+      setSingleStage("");
+      setIsCapturing(false);
+      await handleOpenCamera();
     }
   };
 
@@ -378,7 +415,7 @@ const Upload = () => {
                     </label>
                   </div>
 
-                  {singleImage && (
+                  {(singleImage || captureUrl) && (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                       <Card className="shadow-card">
                         <CardHeader>
@@ -387,7 +424,27 @@ const Upload = () => {
                         </CardHeader>
                         <CardContent>
                           <div className="aspect-square bg-muted rounded-lg overflow-hidden">
-                            <img src={singleImage.url} alt="Imagem enviada" className="w-full h-full object-cover" />
+                            {(() => {
+                              const rawBackendUrl = singleImage?.url as string | undefined;
+                              const resolvedBackendUrl = (() => {
+                                if (!rawBackendUrl) return undefined;
+                                if (/^(https?:|data:|blob:)/i.test(rawBackendUrl)) return rawBackendUrl;
+                                const base = env.API_BASE_URL || '';
+                                if (!base) return rawBackendUrl;
+                                return `${base}${rawBackendUrl.startsWith('/') ? '' : '/'}${rawBackendUrl}`;
+                              })();
+                              const previewSrc = (captureUrl ?? resolvedBackendUrl) as string | undefined;
+                              return previewSrc ? (
+                                <img src={previewSrc} alt="Imagem enviada" className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-muted-foreground">Sem pré-visualização</div>
+                              );
+                            })()}
+                          </div>
+                          <div className="mt-3 flex gap-2">
+                            <Button type="button" variant="outline" onClick={handleRetakePhoto}>
+                              Tirar novamente
+                            </Button>
                           </div>
                         </CardContent>
                       </Card>

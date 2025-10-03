@@ -8,12 +8,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
-import { Home, Info, LogOut, Eye, User, Star } from "lucide-react";
+import { Home, Info, LogOut, Eye, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { api, endpoints, ClassifyRequest, ClassifyResponse } from "@/lib/api";
 import { clearAuthToken } from "@/lib/auth";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { listImages } from "@/lib/images";
+// Removed react-query usage for this screen; we fetch directly
 import { Skeleton } from "@/components/ui/skeleton";
 
 const Classification = () => {
@@ -24,13 +23,15 @@ const Classification = () => {
   const [classification, setClassification] = useState("");
   const [observationsEnabled, setObservationsEnabled] = useState(false);
   const [observations, setObservations] = useState("");
-  const [showFeedbackForm, setShowFeedbackForm] = useState(false);
-  const [isFirstClassification, setIsFirstClassification] = useState(true);
+  // Feedback disabled temporarily
+  // const [showFeedbackForm, setShowFeedbackForm] = useState(false);
+  // const [isFirstClassification, setIsFirstClassification] = useState(true);
+  const [showBatchDone, setShowBatchDone] = useState(false);
 
-  const queryClient = useQueryClient();
   const [backendImages, setBackendImages] = useState<Array<{ id: string; url: string }>>([]);
   const [loadingBackendImages, setLoadingBackendImages] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [showNoImages, setShowNoImages] = useState(false);
 
   const fetchBackendImages = async (): Promise<Array<{ id: string; url: string }>> => {
     const rawUser = localStorage.getItem("skinone-user");
@@ -50,7 +51,13 @@ const Classification = () => {
       setFetchError(null);
       try {
         const items = await fetchBackendImages();
-        if (mounted) setBackendImages(items ?? []);
+        if (mounted) {
+          const list = items ?? [];
+          setBackendImages(list);
+          if (list.length === 0) {
+            setShowNoImages(true);
+          }
+        }
       } catch (e: any) {
         if (mounted) setFetchError(e?.message ?? "Falha ao carregar imagens para classificação");
       } finally {
@@ -90,12 +97,12 @@ const Classification = () => {
       return;
     }
 
-    if (imageList.length === 0) {
+    if (totalImages === 0) {
       // Demo mode: sem backend, apenas simula sucesso
       toast({ title: "Classificação salva (demo)", description: `Imagem classificada como: ${classification}${observationsEnabled && observations ? ` • Obs: ${observations}` : ""}` });
     } else {
       try {
-        const current = imageList[currentImageIndex];
+        const current = backendImages[currentImageIndex];
         const payload: ClassifyRequest = {
           image_id: String(current.id),
           stage: classification as ClassifyRequest["stage"],
@@ -114,35 +121,33 @@ const Classification = () => {
       }
     }
 
-    // Mostrar formulário de feedback na primeira classificação
-    if (isFirstClassification) {
-      setShowFeedbackForm(true);
-      setIsFirstClassification(false);
-    }
+    // Feedback disabled temporarily
+    // if (isFirstClassification) {
+    //   setShowFeedbackForm(true);
+    //   setIsFirstClassification(false);
+    // }
 
     // Próxima imagem
-    if (currentImageIndex < imageList.length - 1) {
+    if (currentImageIndex < totalImages - 1) {
       setCurrentImageIndex(prev => prev + 1);
       setClassification("");
       setObservations("");
     } else {
-      toast({
-        title: "Todas as imagens foram classificadas!",
-        description: "Obrigado pelo seu trabalho.",
-      });
+      setShowBatchDone(true);
     }
   };
 
-  const useMocks = import.meta.env.VITE_USE_MOCKS === 'true';
-  const hasBackendImages = !useMocks && backendImages.length > 0;
-  const imageList = hasBackendImages
-    ? backendImages
-    : [
-        { id: "sample-1", url: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=400&h=400&fit=crop", patient: "Paciente A" },
-        { id: "sample-2", url: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?w=400&h=400&fit=crop", patient: "Paciente B" },
-        { id: "sample-3", url: "https://images.unsplash.com/photo-1551601651-2a8555f1a136?w=400&h=400&fit=crop", patient: "Paciente C" },
-      ];
-  const currentImage = imageList[currentImageIndex];
+  // Sempre usar o lote vindo do backend; quando vazio, mostrar estado vazio
+  const totalImages = backendImages.length;
+  const currentImage = totalImages > 0 ? backendImages[currentImageIndex] : null;
+
+  // Clamp do índice quando o lote muda
+  useEffect(() => {
+    setCurrentImageIndex((prev) => {
+      if (totalImages === 0) return 0;
+      return Math.min(prev, totalImages - 1);
+    });
+  }, [totalImages]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -178,7 +183,11 @@ const Classification = () => {
             <div>
               <h1 className="text-3xl font-bold text-foreground">Classificação de Lesões</h1>
               <p className="text-muted-foreground">
-                Imagem {currentImageIndex + 1} de {imageList.length} • {currentImage.patient}
+                {totalImages > 0 ? (
+                  <>Imagem {Math.min(currentImageIndex + 1, totalImages)} de {totalImages}</>
+                ) : (
+                  <>Nenhuma imagem para classificar</>
+                )}
               </p>
             </div>
             
@@ -251,20 +260,22 @@ const Classification = () => {
                   <Eye className="w-5 h-5" />
                   Imagem para Classificação
                 </CardTitle>
-                <CardDescription>{currentImage.patient}</CardDescription>
+                <CardDescription>
+                  {totalImages > 0 ? `Total no lote: ${totalImages}` : "Aguardando imagens"}
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 {loadingBackendImages ? (
                   <div className="aspect-square bg-muted rounded-lg overflow-hidden">
                     <Skeleton className="w-full h-full" />
                   </div>
-                ) : (
+                ) : currentImage ? (
                   <div className="aspect-square bg-muted rounded-lg overflow-hidden">
-                    <img
-                      src={currentImage.url}
-                      alt="Lesão para classificação"
-                      className="w-full h-full object-cover"
-                    />
+                    <img src={currentImage.url} alt="Lesão para classificação" className="w-full h-full object-cover" />
+                  </div>
+                ) : (
+                  <div className="aspect-square bg-muted rounded-lg flex items-center justify-center text-muted-foreground">
+                    Nenhuma imagem disponível
                   </div>
                 )}
                 <div className="mt-4 flex justify-center">
@@ -356,7 +367,7 @@ const Classification = () => {
                   size="lg" 
                   className="w-full"
                   onClick={handleClassification}
-                  disabled={loadingBackendImages}
+                  disabled={loadingBackendImages || totalImages === 0}
                 >
                   Confirmar Classificação
                 </Button>
@@ -366,7 +377,8 @@ const Classification = () => {
         </div>
       </main>
 
-      {/* Feedback Form Dialog */}
+      {/** Feedback disabled temporarily */}
+      {/**
       <Dialog open={showFeedbackForm} onOpenChange={setShowFeedbackForm}>
         <DialogContent>
           <DialogHeader>
@@ -391,6 +403,65 @@ const Classification = () => {
                 Pular
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      */}
+
+      {/* Batch Completed Dialog */}
+      <Dialog open={showBatchDone} onOpenChange={setShowBatchDone}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Parabéns!</DialogTitle>
+            <DialogDescription>
+              O lote foi classificado com sucesso. Obrigado por ajudar na classificação.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col sm:flex-row gap-2 mt-4">
+            <Button
+              variant="medical"
+              className="flex-1"
+              onClick={() => {
+                setShowBatchDone(false);
+                // Recarrega a página de classificação para buscar novo lote
+                navigate(`/classification`);
+              }}
+            >
+              Continuar classificando
+            </Button>
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => {
+                setShowBatchDone(false);
+                navigate(`/professional`);
+              }}
+            >
+              Voltar à Área Profissional
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* No Images Available Dialog */}
+      <Dialog open={showNoImages} onOpenChange={setShowNoImages}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Obrigado!</DialogTitle>
+            <DialogDescription>
+              Todas as imagens disponíveis já foram classificadas no momento. Volte mais tarde ou faça novos uploads.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end mt-4">
+            <Button
+              variant="medical"
+              onClick={() => {
+                setShowNoImages(false);
+                navigate(`/professional`);
+              }}
+            >
+              Ir para Área Profissional
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
